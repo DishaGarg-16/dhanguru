@@ -45,7 +45,12 @@ app.add_middleware(
 
 # Register API Routers
 from backend.app.api.analytics import router as analytics_router
+from backend.app.api.watchlist import router as watchlist_router
+from backend.app.api.briefing import router as briefing_router
+
 app.include_router(analytics_router)
+app.include_router(watchlist_router)
+app.include_router(briefing_router)
 
 
 @app.get("/")
