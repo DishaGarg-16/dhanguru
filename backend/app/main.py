@@ -43,6 +43,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register API Routers
+from backend.app.api.analytics import router as analytics_router
+app.include_router(analytics_router)
+
+
+@app.get("/")
+async def root():
+    return {
+        "service": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "docs_url": "/docs",
+        "health_url": "/health",
+        "tickers_url": "/api/market/tickers",
+    }
+
 
 @app.get("/health")
 async def health_check():
