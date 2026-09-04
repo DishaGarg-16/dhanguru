@@ -97,11 +97,15 @@ async def websocket_endpoint(websocket: WebSocket):
     await stream_manager.connect(websocket)
     try:
         # Send initial snapshot upon connection
+        bench = central_store.get_benchmark()
         initial_data = {
             "type": "INITIAL_SNAPSHOT",
             "session": get_market_session_status(),
-            "benchmark": central_store.get_benchmark(),
-            "tickers": central_store.get_all_latest(),
+            "benchmark": bench.model_dump(mode="json") if bench else None,
+            "tickers": {
+                sym: t.model_dump(mode="json")
+                for sym, t in central_store.get_all_latest().items()
+            },
         }
         await websocket.send_text(json.dumps(initial_data, default=str))
 
@@ -145,14 +149,15 @@ async def trigger_test_anomaly(
 
     # Store and broadcast to all connected WebSocket clients
     central_store.update_ticker(updated_snap)
-    eval_res = AnomalyDetector.evaluate(updated_snap, central_store.get_benchmark())
+    bench = central_store.get_benchmark()
+    eval_res = AnomalyDetector.evaluate(updated_snap, bench)
 
     await stream_manager.broadcast(
         {
             "type": "TICK_UPDATE",
-            "ticker": updated_snap,
-            "anomaly": eval_res,
-            "benchmark": central_store.get_benchmark(),
+            "ticker": updated_snap.model_dump(mode="json"),
+            "anomaly": eval_res.model_dump(mode="json"),
+            "benchmark": bench.model_dump(mode="json") if bench else None,
         }
     )
 

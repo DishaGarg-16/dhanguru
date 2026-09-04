@@ -40,3 +40,21 @@ async def get_briefing_for_time_window(
         symbols=wl.symbols,
     )
     return await briefing_service.generate_briefing(report)
+
+
+@router.get("/status")
+async def get_ai_status():
+    """
+    Returns live diagnostic status of LLM connection (Ollama/Cloud/Fallback).
+    """
+    return briefing_service.get_status()
+
+
+@router.post("/refresh-ai")
+async def refresh_ai_connection():
+    """
+    Force re-initialization of the AI agent from .env
+    """
+    briefing_service._init_agent()
+    return briefing_service.get_status()
+

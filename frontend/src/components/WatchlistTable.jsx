@@ -173,7 +173,9 @@ export function WatchlistTable({ items, onSelectStock, onRemoveStock }) {
                     color: '#FFF',
                   }}
                 >
-                  ₹{stock.current_price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ₹{typeof stock.current_price === 'number'
+                    ? stock.current_price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : stock.current_price}
                 </div>
                 <div
                   className="font-mono"
@@ -190,7 +192,7 @@ export function WatchlistTable({ items, onSelectStock, onRemoveStock }) {
                 >
                   {isPos ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                   <span>
-                    {isPos ? '+' : ''}₹{stock.change.toFixed(2)} ({isPos ? '+' : ''}{stock.change_percent.toFixed(2)}%)
+                    {isPos ? '+' : ''}₹{typeof stock.change === 'number' ? stock.change.toFixed(2) : stock.change} ({isPos ? '+' : ''}{typeof stock.change_percent === 'number' ? stock.change_percent.toFixed(2) : stock.change_percent}%)
                   </span>
                 </div>
               </div>

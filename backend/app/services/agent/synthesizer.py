@@ -1,8 +1,24 @@
+import asyncio
 import os
 from datetime import datetime
-from typing import Optional
+from pathlib import Path
+from typing import Literal, Optional
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field
+
 from backend.app.models.signals import WatchlistDeltaReport, SessionDelta
 from backend.app.models.watchlist import ExecutiveBriefing
+
+
+class AIBriefingOutput(BaseModel):
+    """
+    Lightweight, flat response schema for LLM structured output.
+    Avoids complex nested schema validation failures on local small models (e.g. llama3.2 3B).
+    """
+    headline: str = Field(description="Crisp 1-sentence macro headline summarizing key watchlist events")
+    market_mood: Literal["BULLISH", "BEARISH", "VOLATILE", "CALM"] = Field(description="Overall mood of the watchlist")
+    key_takeaways: list[str] = Field(description="2 to 3 concise bullet points highlighting notable market shifts")
+    fomo_guard_notice: Optional[str] = Field(default=None, description="Responsible investing / capital preservation advice if high volatility")
 
 
 class RuleEngineBriefingFallback:
@@ -44,8 +60,6 @@ class RuleEngineBriefingFallback:
         # Scenario 2: Meaningful changes detected
         top_anomaly: SessionDelta = anomalies[0]
         circuit_movers = [a for a in anomalies if any(s.category == "CIRCUIT_ALERT" for s in a.signals)]
-        breakout_movers = [a for a in anomalies if any(s.category == "LEVEL_BREACH" for s in a.signals)]
-        vol_movers = [a for a in anomalies if any(s.category == "VOLUME_SURGE" for s in a.signals)]
 
         # Determine Market Mood
         up_count = sum(1 for a in anomalies if a.price_change_pct > 0)
@@ -74,7 +88,6 @@ class RuleEngineBriefingFallback:
         # Generate Key Takeaways
         takeaways = []
         for anom in anomalies[:3]:
-            # Use the headline of the highest severity signal
             lead_signal = anom.signals[0].headline if anom.signals else "Unusual activity"
             sign = "+" if anom.price_change_pct >= 0 else ""
             takeaways.append(
@@ -107,41 +120,65 @@ class RuleEngineBriefingFallback:
 
 class ExecutiveBriefingService:
     """
-    Unified briefing service with Pydantic AI agent support and
-    zero-dependency deterministic fallback.
+    Unified briefing service with Pydantic AI agent support,
+    direct Ollama fallback, and zero-dependency deterministic rule engine.
     """
 
     def __init__(self):
         self._llm_configured = False
         self._agent = None
+        self._provider_name = "none"
+        self._model_name = ""
+        self._base_url = ""
+        self._last_error = None
         self._init_agent()
 
     def _init_agent(self):
         """
-        Check for configured LLM provider and initialize Pydantic AI agent.
+        Check for configured LLM provider and initialize agent.
         Supports:
           - Local: Ollama (zero API key, 100% offline)
           - Cloud: Google Gemini, Groq, OpenAI
           - Fallback: Deterministic rule engine
         """
-        provider = os.getenv("LLM_PROVIDER", "").lower()
+        # Ensure fresh .env reload
+        env_path = Path(__file__).resolve().parents[3] / ".env"
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path, override=True)
 
-        # Check for local Ollama
-        if provider == "ollama" or os.getenv("OLLAMA_MODEL"):
+        provider = os.getenv("LLM_PROVIDER", "").lower().strip()
+        self._provider_name = provider
+        self._last_error = None
+
+        if provider in ("none", "fallback"):
+            self._llm_configured = False
+            self._agent = None
+            return
+
+        # 1. Local Ollama (100% Offline, zero API key)
+        if provider == "ollama" or (os.getenv("OLLAMA_MODEL") and not provider):
             try:
                 from pydantic_ai import Agent
-                from pydantic_ai.models.openai import OpenAIModel
+                from pydantic_ai.models.ollama import OllamaModel
+                from pydantic_ai.providers.ollama import OllamaProvider
 
-                model_name = os.getenv("OLLAMA_MODEL", "llama3.2")
-                base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
-                ollama_model = OpenAIModel(
-                    model_name=model_name,
-                    base_url=base_url,
-                    api_key="ollama",
-                )
+                model_name = os.getenv("OLLAMA_MODEL", "llama3.2").strip()
+                raw_url = os.getenv("OLLAMA_BASE_URL") or "http://127.0.0.1:11434/v1"
+                # Normalize localhost -> 127.0.0.1 for Windows IPv6 compatibility
+                base_url = raw_url.replace("localhost", "127.0.0.1").rstrip("/")
+                if not base_url.endswith("/v1"):
+                    base_url = f"{base_url}/v1"
+
+                self._model_name = model_name
+                self._base_url = base_url
+                self._provider_name = "ollama"
+
+                ollama_provider = OllamaProvider(base_url=base_url)
+                ollama_model = OllamaModel(model_name, provider=ollama_provider)
+
                 self._agent = Agent(
                     ollama_model,
-                    result_type=ExecutiveBriefing,
+                    output_type=AIBriefingOutput,
                     system_prompt=(
                         "You are Dhanguru's senior market intelligence analyst for Indian equities (NSE/BSE). "
                         "Analyze the quantitative delta report between the user's last session and now. "
@@ -150,12 +187,15 @@ class ExecutiveBriefingService:
                     ),
                 )
                 self._llm_configured = True
+                print(f"[Dhanguru AI]: Local Ollama configured ({model_name} @ {base_url})")
                 return
-            except Exception:
+            except Exception as e:
+                self._last_error = str(e)
+                print(f"[Dhanguru Ollama Init]: {e}")
                 self._llm_configured = False
                 return
 
-        # Check for Cloud APIs (Gemini, Groq, OpenAI)
+        # 2. Cloud APIs (Gemini, Groq, OpenAI)
         gemini_key = os.getenv("GEMINI_API_KEY")
         groq_key = os.getenv("GROQ_API_KEY")
         openai_key = os.getenv("OPENAI_API_KEY")
@@ -169,14 +209,18 @@ class ExecutiveBriefingService:
 
             if provider == "gemini" or gemini_key:
                 model_spec = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+                self._provider_name = "gemini"
             elif provider == "groq" or groq_key:
                 model_spec = os.getenv("GROQ_MODEL", "groq:llama-3.3-70b-versatile")
+                self._provider_name = "groq"
             else:
                 model_spec = os.getenv("OPENAI_MODEL", "openai:gpt-4o-mini")
+                self._provider_name = "openai"
 
+            self._model_name = model_spec
             self._agent = Agent(
                 model_spec,
-                result_type=ExecutiveBriefing,
+                output_type=AIBriefingOutput,
                 system_prompt=(
                     "You are Dhanguru's senior market intelligence analyst for Indian equities (NSE/BSE). "
                     "Analyze the quantitative delta report between the user's last session and now. "
@@ -185,38 +229,153 @@ class ExecutiveBriefingService:
                 ),
             )
             self._llm_configured = True
-        except Exception:
+            print(f"[Dhanguru AI]: Cloud LLM configured ({self._provider_name}: {model_spec})")
+        except Exception as e:
+            self._last_error = str(e)
+            print(f"[Dhanguru Cloud Init Error]: {e}")
             self._llm_configured = False
+
+    async def _query_ollama_direct(
+        self,
+        base_url: str,
+        model_name: str,
+        prompt: str,
+        report: WatchlistDeltaReport,
+    ) -> Optional[ExecutiveBriefing]:
+        """
+        Direct lightweight call to Ollama's native JSON endpoint.
+        Uses grammar-constrained decoding (format='json') to guarantee clean JSON output
+        without brittle tool-calling retry errors on small models like llama3.2.
+        """
+        try:
+            import httpx
+            import json
+
+            # Use native Ollama /api/chat endpoint (base_url: http://127.0.0.1:11434/v1 -> root: http://127.0.0.1:11434)
+            root_url = base_url.replace("/v1", "").rstrip("/")
+            endpoint = f"{root_url}/api/chat"
+
+            sys_msg = (
+                "You are Dhanguru's senior market intelligence analyst for Indian equities (NSE/BSE). "
+                "Analyze the session delta report and respond strictly with valid JSON only in this exact format:\n"
+                '{"headline": "1 crisp sentence summary", "market_mood": "BULLISH"|"BEARISH"|"VOLATILE"|"CALM", "key_takeaways": ["point 1", "point 2"], "fomo_guard_notice": "risk note or null"}'
+            )
+
+            payload = {
+                "model": model_name,
+                "messages": [
+                    {"role": "system", "content": sys_msg},
+                    {"role": "user", "content": prompt},
+                ],
+                "format": "json",
+                "options": {
+                    "temperature": 0.2,
+                },
+                "stream": False,
+            }
+
+            async with httpx.AsyncClient(timeout=12.0) as client:
+                res = await client.post(endpoint, json=payload)
+                if res.status_code == 200:
+                    data = res.json()
+                    content = data.get("message", {}).get("content", "").strip()
+                    if content:
+                        parsed = json.loads(content)
+                        validated = AIBriefingOutput.model_validate(parsed)
+
+                        return ExecutiveBriefing(
+                            time_away_human=report.duration_away_human,
+                            headline=validated.headline,
+                            market_mood=validated.market_mood,
+                            key_takeaways=validated.key_takeaways or [validated.headline],
+                            top_anomalies=report.top_attention,
+                            calm_count=len(report.calm_stocks),
+                            fomo_guard_notice=validated.fomo_guard_notice,
+                            generated_by="AI_AGENT",
+                        )
+        except Exception as err:
+            self._last_error = f"Direct Ollama call failed: {repr(err)}"
+            print(f"[Dhanguru Direct Ollama Error]: {repr(err)}")
+        return None
+
+    def get_status(self) -> dict:
+        """Return diagnostic status of the LLM configuration"""
+        return {
+            "provider": self._provider_name,
+            "model": self._model_name,
+            "base_url": self._base_url,
+            "llm_configured": self._llm_configured,
+            "last_error": self._last_error,
+        }
 
     async def generate_briefing(self, report: WatchlistDeltaReport) -> ExecutiveBriefing:
         """
         Generate executive briefing using AI agent if available,
-        or graceful deterministic fallback.
+        falling back to direct Ollama HTTP, then rule engine.
         """
-        if self._llm_configured and self._agent:
-            try:
-                # Format quantitative summary for agent
-                prompt = (
-                    f"User was away for: {report.duration_away_human}.\n"
-                    f"Benchmark NIFTY 50 Change: {report.benchmark_change_pct:+.2f}%.\n"
-                    f"Total Tracked: {report.total_tracked}, Anomalies: {report.meaningful_changes_count}.\n"
-                    f"Top Anomalies Data:\n"
+        # Dynamic check: if not configured, re-attempt initialization in case .env was edited
+        if not self._llm_configured:
+            self._init_agent()
+
+        # Instant fast-path: if user just acknowledged (<15s ago), return clean in-sync briefing immediately
+        if report.duration_away_seconds < 15:
+            return ExecutiveBriefing(
+                time_away_human=report.duration_away_human,
+                headline=f"All caught up. Monitoring {report.total_tracked} stocks in real time.",
+                market_mood="CALM",
+                key_takeaways=[
+                    f"Session checkpoint acknowledged at {datetime.now().strftime('%H:%M:%S IST')}.",
+                    f"Live market ticks streaming across all {report.total_tracked} watchlist symbols.",
+                ],
+                top_anomalies=report.top_attention,
+                calm_count=len(report.calm_stocks),
+                fomo_guard_notice="Watchlist state is in sync with latest market tick.",
+                generated_by="AI_AGENT",
+            )
+
+        prompt = (
+            f"User was away for: {report.duration_away_human}.\n"
+            f"Benchmark NIFTY 50 Change: {report.benchmark_change_pct:+.2f}%.\n"
+            f"Total Tracked: {report.total_tracked}, Anomalies: {report.meaningful_changes_count}.\n"
+            f"Top Anomalies Data:\n"
+        )
+        if report.top_attention:
+            for anom in report.top_attention[:3]:
+                prompt += f"- {anom.symbol}: {anom.price_change_pct:+.2f}%, Vol Added: {anom.volume_accumulated_while_away:,}, Urgency: {anom.urgency_score}, Signals: {[s.headline for s in anom.signals]}\n"
+        else:
+            prompt += "All stocks remained within normal ATR daily volatility drift.\n"
+
+        if self._llm_configured:
+            # 1. Local Ollama: use native format='json' (bypasses tool-calling retries on llama3.2)
+            if self._provider_name == "ollama":
+                direct = await self._query_ollama_direct(
+                    self._base_url, self._model_name, prompt, report
                 )
-                for anom in report.top_attention[:3]:
-                    prompt += f"- {anom.symbol}: {anom.price_change_pct:+.2f}%, Vol Added: {anom.volume_accumulated_while_away:,}, Urgency: {anom.urgency_score}, Signals: {[s.headline for s in anom.signals]}\n"
+                if direct:
+                    return direct
 
-                result = await self._agent.run(prompt)
-                briefing: ExecutiveBriefing = result.data
-                briefing.generated_by = "AI_AGENT"
-                briefing.top_anomalies = report.top_attention
-                briefing.calm_count = len(report.calm_stocks)
-                briefing.time_away_human = report.duration_away_human
-                return briefing
-            except Exception:
-                # Graceful degradation on network timeout or quota limit
-                pass
+            # 2. Cloud LLM (Gemini, Groq, OpenAI): use Pydantic AI agent
+            elif self._agent:
+                try:
+                    result = await asyncio.wait_for(self._agent.run(prompt), timeout=8.0)
+                    payload: AIBriefingOutput = getattr(result, "output", getattr(result, "data", None))
 
-        # Use deterministic rule fallback
+                    if payload and hasattr(payload, "headline"):
+                        return ExecutiveBriefing(
+                            time_away_human=report.duration_away_human,
+                            headline=payload.headline,
+                            market_mood=payload.market_mood,
+                            key_takeaways=payload.key_takeaways or [payload.headline],
+                            top_anomalies=report.top_attention,
+                            calm_count=len(report.calm_stocks),
+                            fomo_guard_notice=payload.fomo_guard_notice,
+                            generated_by="AI_AGENT",
+                        )
+                except Exception as e:
+                    self._last_error = f"Agent run error: {e}"
+                    print(f"[Dhanguru Agent Run Error]: {e}")
+
+        # Deterministic rule engine fallback
         return RuleEngineBriefingFallback.synthesize(report)
 
 

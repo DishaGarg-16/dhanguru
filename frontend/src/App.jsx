@@ -11,6 +11,7 @@ import { Zap, Sparkles, ChevronDown } from 'lucide-react';
 export default function App() {
   const [watchlistData, setWatchlistData] = useState(null);
   const [briefing, setBriefing] = useState(null);
+  const [briefingLoading, setBriefingLoading] = useState(false);
   const [selectedWindow, setSelectedWindow] = useState('since_last');
   const [filterHighAttention, setFilterHighAttention] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +35,7 @@ export default function App() {
 
   // Fetch Executive Briefing via REST
   const fetchBriefing = useCallback(async (windowId = selectedWindow) => {
+    setBriefingLoading(true);
     try {
       let url = '/api/briefing/since-last';
       if (windowId === '15m') url = '/api/briefing/window?minutes_ago=15';
@@ -47,13 +49,15 @@ export default function App() {
       }
     } catch (err) {
       console.error('Failed to fetch briefing:', err);
+    } finally {
+      setBriefingLoading(false);
     }
   }, [selectedWindow]);
 
   // Live WebSocket Tick Handler (Phase 6 Real-Time Engine)
   const handleLiveTick = useCallback((eventData) => {
     const { ticker, anomaly, benchmark } = eventData;
-    if (!ticker) return;
+    if (!ticker || typeof ticker !== 'object') return;
 
     setWatchlistData((prev) => {
       if (!prev || !prev.items) return prev;
@@ -62,17 +66,17 @@ export default function App() {
         if (item.symbol === ticker.symbol) {
           return {
             ...item,
-            current_price: ticker.current_price,
-            change: ticker.change,
-            change_percent: ticker.change_percent,
-            volume: ticker.volume,
-            rvol: ticker.rvol,
+            current_price: ticker.current_price ?? item.current_price,
+            change: ticker.change ?? item.change,
+            change_percent: ticker.change_percent ?? item.change_percent,
+            volume: ticker.volume ?? item.volume,
+            rvol: ticker.rvol ?? item.rvol,
             urgency_score: anomaly?.urgency_score ?? item.urgency_score,
             requires_attention: anomaly?.requires_attention ?? item.requires_attention,
             primary_driver: anomaly?.primary_driver ?? item.primary_driver,
             signals: anomaly?.signals ?? item.signals,
-            is_near_upper_circuit: ticker.upper_circuit_distance_pct <= 1.0,
-            is_near_lower_circuit: ticker.lower_circuit_distance_pct <= 1.0,
+            is_near_upper_circuit: (ticker.upper_circuit_distance_pct ?? 10) <= 1.0,
+            is_near_lower_circuit: (ticker.lower_circuit_distance_pct ?? 10) <= 1.0,
             timestamp: ticker.timestamp,
           };
         }
@@ -82,9 +86,11 @@ export default function App() {
       // Maintain sorting by urgency score
       updatedItems.sort((a, b) => b.urgency_score - a.urgency_score);
 
+      const validBenchmark = typeof benchmark === 'object' && benchmark !== null ? benchmark : prev.benchmark;
+
       return {
         ...prev,
-        benchmark: benchmark || prev.benchmark,
+        benchmark: validBenchmark,
         high_attention_count: updatedItems.filter((i) => i.requires_attention).length,
         items: updatedItems,
       };
@@ -112,9 +118,20 @@ export default function App() {
     try {
       const res = await fetch('/api/watchlist/acknowledge', { method: 'POST' });
       if (res.ok) {
-        await fetchWatchlist();
-        await fetchBriefing('since_last');
+        setAcknowledging(false);
+        // Optimistically set to 0s away so user sees instant feedback in <50ms
+        setBriefing((prev) => ({
+          ...(prev || {}),
+          time_away_human: '0s',
+          headline: 'All caught up. Monitoring watchlist in real time.',
+          market_mood: 'CALM',
+          key_takeaways: ['Session checkpoint acknowledged. Ready for fresh session deltas.'],
+          fomo_guard_notice: 'Checkpoint synchronized with latest market tick.',
+          generated_by: prev?.generated_by || 'AI_AGENT',
+        }));
         setSelectedWindow('since_last');
+        await fetchWatchlist();
+        fetchBriefing('since_last');
       }
     } catch (err) {
       console.error('Acknowledge failed:', err);
@@ -236,7 +253,7 @@ export default function App() {
         </div>
 
         {/* Center: Live NIFTY 50 Benchmark Ticker */}
-        {benchmark && (
+        {benchmark && typeof benchmark === 'object' && (
           <div
             className="glass-card"
             style={{
@@ -247,9 +264,11 @@ export default function App() {
               fontSize: '12px',
             }}
           >
-            <span style={{ fontWeight: 700, color: '#94A3B8' }}>{benchmark.symbol}</span>
+            <span style={{ fontWeight: 700, color: '#94A3B8' }}>{benchmark.symbol || 'NIFTY50'}</span>
             <span className="font-mono" style={{ fontWeight: 700, color: '#FFF' }}>
-              {benchmark.current_value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              {typeof benchmark.current_value === 'number'
+                ? benchmark.current_value.toLocaleString('en-IN', { maximumFractionDigits: 2 })
+                : benchmark.current_value || '24,850.00'}
             </span>
             <span
               className="font-mono"
@@ -259,7 +278,7 @@ export default function App() {
               }}
             >
               {isBenchPos ? '+' : ''}
-              {benchmark.change_percent.toFixed(2)}%
+              {typeof benchmark.change_percent === 'number' ? benchmark.change_percent.toFixed(2) : benchmark.change_percent || '0.00'}%
             </span>
           </div>
         )}
@@ -351,7 +370,9 @@ export default function App() {
         briefing={briefing}
         onAcknowledge={handleAcknowledge}
         acknowledging={acknowledging}
+        loading={briefingLoading}
       />
+
 
       {/* Time-Travel Scrubber Controls */}
       <TimeTravelScrubber

@@ -25,12 +25,13 @@ async def lifespan(app: FastAPI):
     async def on_tick(updated_snap: TickerSnapshot):
         central_store.update_ticker(updated_snap)
         try:
-            eval_res = AnomalyDetector.evaluate(updated_snap, central_store.get_benchmark())
+            bench = central_store.get_benchmark()
+            eval_res = AnomalyDetector.evaluate(updated_snap, bench)
             await stream_manager.broadcast({
                 "type": "TICK_UPDATE",
-                "ticker": updated_snap,
-                "anomaly": eval_res,
-                "benchmark": central_store.get_benchmark(),
+                "ticker": updated_snap.model_dump(mode="json"),
+                "anomaly": eval_res.model_dump(mode="json"),
+                "benchmark": bench.model_dump(mode="json") if bench else None,
             })
         except Exception:
             pass

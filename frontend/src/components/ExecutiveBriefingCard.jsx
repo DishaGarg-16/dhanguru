@@ -1,7 +1,49 @@
 import React from 'react';
 import { Sparkles, Shield, Clock, CheckCircle, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 
-export function ExecutiveBriefingCard({ briefing, onAcknowledge, acknowledging }) {
+export function ExecutiveBriefingCard({ briefing, onAcknowledge, acknowledging, loading }) {
+  if (loading && !briefing) {
+    return (
+      <div
+        className="glass-card"
+        style={{
+          background: 'linear-gradient(135deg, rgba(19, 26, 38, 0.95) 0%, rgba(13, 17, 24, 0.95) 100%)',
+          border: '1px solid rgba(0, 208, 156, 0.25)',
+          borderRadius: '16px',
+          padding: '22px 26px',
+          marginBottom: '28px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+        }}
+      >
+        <div
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            backgroundColor: 'var(--emerald-green-soft)',
+            color: 'var(--emerald-green)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'pulse 1.5s infinite',
+          }}
+        >
+          <Sparkles size={18} />
+        </div>
+        <div>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: '#FFF' }}>
+            ⚡ AI Co-Pilot analyzing your watchlist delta with Ollama...
+          </div>
+          <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>
+            Computing 14-day ATR volatility bands and Relative Volume surges...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!briefing) return null;
 
   const moodColor = {
@@ -102,10 +144,12 @@ export function ExecutiveBriefingCard({ briefing, onAcknowledge, acknowledging }
             style={{
               fontSize: '10px',
               fontWeight: 600,
-              color: '#64748B',
-              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              color: briefing.generated_by === 'AI_AGENT' ? 'var(--emerald-green)' : '#64748B',
+              backgroundColor: briefing.generated_by === 'AI_AGENT' ? 'rgba(0, 208, 156, 0.1)' : 'rgba(255, 255, 255, 0.02)',
+              border: briefing.generated_by === 'AI_AGENT' ? '1px solid rgba(0, 208, 156, 0.3)' : '1px solid transparent',
               padding: '3px 8px',
               borderRadius: '4px',
+              transition: 'all 0.2s ease',
             }}
           >
             {briefing.generated_by === 'AI_AGENT' ? '⚡ AI Co-Pilot' : '🛡️ Rule Engine Fallback'}

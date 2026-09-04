@@ -8,9 +8,9 @@ export function useMarketStream(onTickReceived) {
   const reconnectTimeoutRef = useRef(null);
 
   const connect = useCallback(() => {
-    // Determine WebSocket URL (works with Vite proxy or direct backend port)
+    // Determine WebSocket URL (using 127.0.0.1:8000 directly for reliable local IPv4 on Windows)
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.port === '5173' ? 'localhost:8000' : window.location.host;
+    const host = window.location.port === '5173' ? '127.0.0.1:8000' : window.location.host;
     const wsUrl = `${protocol}//${host}/ws/live`;
 
     try {

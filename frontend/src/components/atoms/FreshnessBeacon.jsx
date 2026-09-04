@@ -14,7 +14,7 @@ export function FreshnessBeacon({
     text: '#00D09C',
     bg: 'rgba(0, 208, 156, 0.1)',
     border: 'rgba(0, 208, 156, 0.25)',
-    label: isMarketLive ? 'LIVE STREAM' : 'SIMULATED FEED',
+    label: isMarketLive ? 'WS CONNECTED • NSE LIVE' : 'WS LIVE • NSE REPLAY (DEMO STREAM)',
     pulse: true,
   };
 
@@ -24,17 +24,8 @@ export function FreshnessBeacon({
       text: '#EB5B56',
       bg: 'rgba(235, 91, 86, 0.1)',
       border: 'rgba(235, 91, 86, 0.25)',
-      label: 'RECONNECTING',
+      label: 'WS RECONNECTING...',
       pulse: true,
-    };
-  } else if (!isMarketLive) {
-    config = {
-      dot: '#FFB300',
-      text: '#FFB300',
-      bg: 'rgba(255, 179, 0, 0.1)',
-      border: 'rgba(255, 179, 0, 0.25)',
-      label: marketSession?.status || 'MARKET CLOSED',
-      pulse: false,
     };
   }
 
