@@ -18,9 +18,22 @@ async def lifespan(app: FastAPI):
         central_store.update_ticker(snap)
     central_store.update_benchmark(await simulator.get_benchmark())
 
-    # Start simulation loop updating central store
+    # Start simulation loop updating central store and broadcasting to WebSockets
+    from backend.app.api.stream import stream_manager
+    from backend.app.services.analytics.anomaly_detector import AnomalyDetector
+
     async def on_tick(updated_snap: TickerSnapshot):
         central_store.update_ticker(updated_snap)
+        try:
+            eval_res = AnomalyDetector.evaluate(updated_snap, central_store.get_benchmark())
+            await stream_manager.broadcast({
+                "type": "TICK_UPDATE",
+                "ticker": updated_snap,
+                "anomaly": eval_res,
+                "benchmark": central_store.get_benchmark(),
+            })
+        except Exception:
+            pass
 
     await simulator.start(on_tick_callback=on_tick)
     yield
@@ -47,10 +60,12 @@ app.add_middleware(
 from backend.app.api.analytics import router as analytics_router
 from backend.app.api.watchlist import router as watchlist_router
 from backend.app.api.briefing import router as briefing_router
+from backend.app.api.stream import router as stream_router
 
 app.include_router(analytics_router)
 app.include_router(watchlist_router)
 app.include_router(briefing_router)
+app.include_router(stream_router)
 
 
 @app.get("/")

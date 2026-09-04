@@ -1,36 +1,40 @@
 import React from 'react';
 
 export function FreshnessBeacon({
-  status = 'LIVE',
+  connectionStatus = 'CONNECTED',
+  marketSession,
   lastUpdated,
   provider = 'NSE Feed',
 }) {
+  const isConnected = connectionStatus === 'CONNECTED';
+  const isMarketLive = marketSession?.is_open ?? true;
+
   let config = {
     dot: '#00D09C',
     text: '#00D09C',
     bg: 'rgba(0, 208, 156, 0.1)',
     border: 'rgba(0, 208, 156, 0.25)',
-    label: 'LIVE STREAM',
+    label: isMarketLive ? 'LIVE STREAM' : 'SIMULATED FEED',
     pulse: true,
   };
 
-  if (status === 'CLOSED') {
-    config = {
-      dot: '#FFB300',
-      text: '#FFB300',
-      bg: 'rgba(255, 179, 0, 0.1)',
-      border: 'rgba(255, 179, 0, 0.25)',
-      label: 'MARKET CLOSED',
-      pulse: false,
-    };
-  } else if (status === 'OFFLINE' || status === 'STALE') {
+  if (!isConnected) {
     config = {
       dot: '#EB5B56',
       text: '#EB5B56',
       bg: 'rgba(235, 91, 86, 0.1)',
       border: 'rgba(235, 91, 86, 0.25)',
-      label: 'FEED DELAYED',
+      label: 'RECONNECTING',
       pulse: true,
+    };
+  } else if (!isMarketLive) {
+    config = {
+      dot: '#FFB300',
+      text: '#FFB300',
+      bg: 'rgba(255, 179, 0, 0.1)',
+      border: 'rgba(255, 179, 0, 0.25)',
+      label: marketSession?.status || 'MARKET CLOSED',
+      pulse: false,
     };
   }
 
@@ -48,6 +52,7 @@ export function FreshnessBeacon({
         border: `1px solid ${config.border}`,
         color: config.text,
       }}
+      title={marketSession?.reason || 'Real-time WebSocket connection active'}
     >
       <span
         style={{
@@ -61,9 +66,9 @@ export function FreshnessBeacon({
       <span>{config.label}</span>
       <span style={{ color: '#64748B', fontWeight: 400 }}>•</span>
       <span style={{ color: '#94A3B8', fontWeight: 500 }}>{provider}</span>
-      {lastUpdated && (
+      {marketSession?.ist_time && (
         <span style={{ color: '#64748B', fontSize: '10px' }}>
-          ({new Date(lastUpdated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })})
+          ({marketSession.ist_time})
         </span>
       )}
     </div>
