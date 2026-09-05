@@ -17,6 +17,7 @@ class Settings:
     # Market Data
     MARKET_DATA_PROVIDER: str = os.getenv("MARKET_DATA_PROVIDER", "MOCK").upper()
     MOCK_UPDATE_INTERVAL_SEC: float = float(os.getenv("MOCK_UPDATE_INTERVAL_SEC", "1.0"))
+    LIVE_POLL_INTERVAL_SEC: float = float(os.getenv("LIVE_POLL_INTERVAL_SEC", "5.0"))
 
     # Indian Market Constants (IST)
     MARKET_OPEN_HOUR: int = 9

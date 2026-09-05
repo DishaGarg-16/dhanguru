@@ -3,11 +3,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.core.config import settings
 from backend.app.models.ticker import TickerSnapshot
-from backend.app.services.market_data.simulator import IndianMarketSimulator
+from backend.app.services.market_data.factory import get_market_provider
 from backend.app.services.market_data.store import central_store
 
 
-simulator = IndianMarketSimulator(update_interval=settings.MOCK_UPDATE_INTERVAL_SEC)
+# Instantiate configured provider (MOCK, LIVE, or AUTO hybrid)
+simulator = get_market_provider()
 
 
 @asynccontextmanager
@@ -86,10 +87,12 @@ async def root():
 @app.get("/health")
 async def health_check():
     from backend.app.core.schedule import MarketScheduleManager
+    active_submode = getattr(simulator, "active_mode", settings.MARKET_DATA_PROVIDER)
     return {
         "status": "healthy",
         "service": settings.PROJECT_NAME,
         "provider": settings.MARKET_DATA_PROVIDER,
+        "active_feed": active_submode,
         "session_status": MarketScheduleManager.get_session_status(),
         "is_market_open": MarketScheduleManager.is_market_open(),
         "is_store_frozen": central_store.is_frozen,
