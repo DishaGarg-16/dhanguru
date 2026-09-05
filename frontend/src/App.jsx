@@ -176,8 +176,12 @@ export default function App() {
     setShowDemoMenu(false);
     try {
       await fetch(`/api/market/simulate/trigger?symbol=${symbol}&anomaly_type=${type}`, { method: 'POST' });
-      // Refresh briefing to reflect newly triggered event
-      setTimeout(() => fetchBriefing(), 600);
+      // Immediately refresh watchlist and briefing to reflect newly triggered event
+      await fetchWatchlist();
+      setTimeout(async () => {
+        await fetchWatchlist();
+        fetchBriefing();
+      }, 500);
     } catch (err) {
       console.error('Trigger anomaly failed:', err);
     }

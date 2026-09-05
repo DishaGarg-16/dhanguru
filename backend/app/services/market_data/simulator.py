@@ -17,6 +17,15 @@ SEED_UNIVERSE = {
         "week_52_high": 268.00,
         "week_52_low": 98.20,
     },
+    "ETERNAL": {
+        "company_name": "Eternal Ltd (Zomato)",
+        "base_price": 258.40,
+        "band_pct": 5.0,
+        "avg_volume_20d": 42500000,
+        "atr_14": 8.50,
+        "week_52_high": 268.00,
+        "week_52_low": 98.20,
+    },
     "TRENT": {
         "company_name": "Trent Ltd (Tata Retail)",
         "base_price": 7180.00,
@@ -28,6 +37,15 @@ SEED_UNIVERSE = {
     },
     "TATAMOTORS": {
         "company_name": "Tata Motors Ltd",
+        "base_price": 985.00,
+        "band_pct": 10.0,
+        "avg_volume_20d": 18400000,
+        "atr_14": 24.50,
+        "week_52_high": 1179.00,
+        "week_52_low": 680.00,
+    },
+    "TMPV": {
+        "company_name": "Tata Motors Passenger Vehicles Ltd",
         "base_price": 985.00,
         "band_pct": 10.0,
         "avg_volume_20d": 18400000,

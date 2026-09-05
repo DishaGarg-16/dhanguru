@@ -150,3 +150,25 @@ def test_ollama_provider_initialization(monkeypatch):
     service = ExecutiveBriefingService()
     # Even if Ollama server is offline, service must not crash and fallback must remain intact
     assert service is not None
+
+
+def test_rule_engine_briefing_empty_watchlist():
+    """Verify synthesizer produces a clean empty state when user has 0 stocks in watchlist"""
+    report = WatchlistDeltaReport(
+        duration_away_seconds=120,
+        duration_away_human="2m",
+        last_seen_at=datetime.now() - timedelta(minutes=2),
+        current_time=datetime.now(),
+        total_tracked=0,
+        meaningful_changes_count=0,
+        benchmark_change_pct=0.0,
+        top_attention=[],
+        calm_stocks=[],
+    )
+
+    briefing = RuleEngineBriefingFallback.synthesize(report)
+
+    assert "empty" in briefing.headline.lower()
+    assert briefing.market_mood == "CALM"
+    assert briefing.top_anomalies == []
+    assert briefing.fomo_guard_notice is None

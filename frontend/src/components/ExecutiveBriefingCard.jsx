@@ -203,7 +203,10 @@ export function ExecutiveBriefingCard({ briefing, onAcknowledge, acknowledging, 
       )}
 
       {/* Responsible Investing / FOMO Guard Alert */}
-      {briefing.fomo_guard_notice && (
+      {briefing.fomo_guard_notice &&
+        typeof briefing.fomo_guard_notice === 'string' &&
+        briefing.fomo_guard_notice.trim().toLowerCase() !== 'null' &&
+        briefing.fomo_guard_notice.trim().toLowerCase() !== 'none' && (
         <div
           style={{
             display: 'flex',

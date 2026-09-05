@@ -34,6 +34,22 @@ class RuleEngineBriefingFallback:
         calm_count = len(report.calm_stocks)
         away_str = report.duration_away_human
 
+        # Scenario 0: Watchlist is empty
+        if report.total_tracked == 0:
+            return ExecutiveBriefing(
+                time_away_human=away_str,
+                headline="Your watchlist is currently empty.",
+                market_mood="CALM",
+                key_takeaways=[
+                    "No stocks are currently being monitored.",
+                    "Click '+ Add Symbol' to add Indian equities and begin tracking structural shifts.",
+                ],
+                top_anomalies=[],
+                calm_count=0,
+                fomo_guard_notice=None,
+                generated_by="RULE_ENGINE_FALLBACK",
+            )
+
         # Scenario 1: Market was entirely calm while away
         if not anomalies:
             bench_sign = "+" if report.benchmark_change_pct >= 0 else ""
@@ -258,7 +274,8 @@ class ExecutiveBriefingService:
             sys_msg = (
                 "You are Dhanguru's senior market intelligence analyst for Indian equities (NSE/BSE). "
                 "Analyze the session delta report and respond strictly with valid JSON only in this exact format:\n"
-                '{"headline": "1 crisp sentence summary", "market_mood": "BULLISH"|"BEARISH"|"VOLATILE"|"CALM", "key_takeaways": ["point 1", "point 2"], "fomo_guard_notice": "risk note or null"}'
+                '{"headline": "1 crisp sentence summary", "market_mood": "BULLISH"|"BEARISH"|"VOLATILE"|"CALM", "key_takeaways": ["point 1", "point 2"], "fomo_guard_notice": null}\n'
+                "Only provide a string for fomo_guard_notice if there is an explicit capital preservation risk or circuit proximity; otherwise set it to null."
             )
 
             payload = {
@@ -283,6 +300,10 @@ class ExecutiveBriefingService:
                         parsed = json.loads(content)
                         validated = AIBriefingOutput.model_validate(parsed)
 
+                        fomo_note = validated.fomo_guard_notice
+                        if fomo_note and fomo_note.strip().lower() in ("null", "none", "nil", "n/a", ""):
+                            fomo_note = None
+
                         return ExecutiveBriefing(
                             time_away_human=report.duration_away_human,
                             headline=validated.headline,
@@ -290,7 +311,7 @@ class ExecutiveBriefingService:
                             key_takeaways=validated.key_takeaways or [validated.headline],
                             top_anomalies=report.top_attention,
                             calm_count=len(report.calm_stocks),
-                            fomo_guard_notice=validated.fomo_guard_notice,
+                            fomo_guard_notice=fomo_note,
                             generated_by="AI_AGENT",
                         )
         except Exception as err:
@@ -317,8 +338,24 @@ class ExecutiveBriefingService:
         if not self._llm_configured:
             self._init_agent()
 
-        # Instant fast-path: if user just acknowledged (<15s ago), return clean in-sync briefing immediately
-        if report.duration_away_seconds < 15:
+        # Scenario 0: Watchlist is empty
+        if report.total_tracked == 0:
+            return ExecutiveBriefing(
+                time_away_human=report.duration_away_human,
+                headline="Your watchlist is currently empty.",
+                market_mood="CALM",
+                key_takeaways=[
+                    "No stocks are currently being monitored.",
+                    "Click '+ Add Symbol' to add Indian equities and begin tracking structural shifts.",
+                ],
+                top_anomalies=[],
+                calm_count=0,
+                fomo_guard_notice=None,
+                generated_by="RULE_ENGINE_FALLBACK",
+            )
+
+        # Instant fast-path: if user just acknowledged (<15s ago) and no anomalies exist
+        if report.duration_away_seconds < 15 and report.meaningful_changes_count == 0:
             return ExecutiveBriefing(
                 time_away_human=report.duration_away_human,
                 headline=f"All caught up. Monitoring {report.total_tracked} stocks in real time.",
@@ -361,6 +398,10 @@ class ExecutiveBriefingService:
                     payload: AIBriefingOutput = getattr(result, "output", getattr(result, "data", None))
 
                     if payload and hasattr(payload, "headline"):
+                        fomo_note = payload.fomo_guard_notice
+                        if fomo_note and fomo_note.strip().lower() in ("null", "none", "nil", "n/a", ""):
+                            fomo_note = None
+
                         return ExecutiveBriefing(
                             time_away_human=report.duration_away_human,
                             headline=payload.headline,
@@ -368,7 +409,7 @@ class ExecutiveBriefingService:
                             key_takeaways=payload.key_takeaways or [payload.headline],
                             top_anomalies=report.top_attention,
                             calm_count=len(report.calm_stocks),
-                            fomo_guard_notice=payload.fomo_guard_notice,
+                            fomo_guard_notice=fomo_note,
                             generated_by="AI_AGENT",
                         )
                 except Exception as e:

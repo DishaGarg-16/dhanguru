@@ -41,7 +41,7 @@ class CheckpointDiffEngine:
         duration_human = self.format_duration(duration_seconds)
 
         all_latest = self.store.get_all_latest()
-        tracked_symbols = symbols if symbols else list(all_latest.keys())
+        tracked_symbols = symbols if symbols is not None else list(all_latest.keys())
 
         benchmark = self.store.get_benchmark()
         benchmark_chg = benchmark.change_percent if benchmark else 0.0

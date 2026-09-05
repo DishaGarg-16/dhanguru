@@ -147,8 +147,8 @@ async def trigger_test_anomaly(
     else:
         updated_snap = simulator.trigger_volume_surge(sym, multiplier=3.4)
 
-    # Store and broadcast to all connected WebSocket clients
-    central_store.update_ticker(updated_snap)
+    # Store and broadcast to all connected WebSocket clients (force=True to bypass after-hours freeze)
+    central_store.update_ticker(updated_snap, force=True)
     bench = central_store.get_benchmark()
     eval_res = AnomalyDetector.evaluate(updated_snap, bench)
 

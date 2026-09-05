@@ -111,3 +111,50 @@ async def test_hybrid_provider_toggles_mode_cleanly():
         await hybrid.start()
         assert hybrid.active_mode == "LIVE"
         await hybrid.stop()
+
+
+@pytest.mark.asyncio
+async def test_live_provider_dynamic_resolution_and_alias():
+    provider = LiveMarketProvider(symbols=["ZOMATO"])
+
+    mock_resp_404 = MagicMock()
+    mock_resp_404.status_code = 404
+
+    mock_yahoo_eternal = {
+        "chart": {
+            "result": [
+                {
+                    "meta": {
+                        "currency": "INR",
+                        "symbol": "ETERNAL.NS",
+                        "regularMarketPrice": 258.40,
+                        "chartPreviousClose": 255.00,
+                        "previousClose": 255.00,
+                        "regularMarketOpen": 256.00,
+                        "regularMarketDayHigh": 260.00,
+                        "regularMarketDayLow": 254.00,
+                        "regularMarketVolume": 35000000,
+                    }
+                }
+            ]
+        }
+    }
+    mock_resp_200 = MagicMock()
+    mock_resp_200.status_code = 200
+    mock_resp_200.json.return_value = mock_yahoo_eternal
+
+    async def mock_get(url):
+        if "ETERNAL.NS" in url:
+            return mock_resp_200
+        return mock_resp_404
+
+    mock_client = AsyncMock()
+    mock_client.get.side_effect = mock_get
+
+    with patch.object(provider, "_get_client", AsyncMock(return_value=mock_client)):
+        snap = await provider.fetch_ticker_quote("ZOMATO")
+
+    assert snap is not None
+    assert snap.symbol == "ZOMATO"
+    assert snap.current_price == 258.40
+    assert provider._resolved_symbols["ZOMATO"] == "ETERNAL.NS"
