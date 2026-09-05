@@ -31,7 +31,7 @@ class AnomalyDetector:
                 AttentionSignal(
                     category=SignalCategory.VOLATILITY_BREAKOUT,
                     severity="HIGH" if z_vol < 3.0 else "CRITICAL",
-                    headline=f"⚡ Sharp Price {direction} ({z_vol:.1f}x Daily ATR)",
+                    headline=f"Sharp Price {direction} ({z_vol:.1f}x Daily ATR)",
                     technical_detail=f"Price moved ₹{abs_change:.2f} vs 14d ATR of ₹{ticker.atr_14:.2f}",
                     badge_color="green" if ticker.change > 0 else "red",
                 )
@@ -42,7 +42,7 @@ class AnomalyDetector:
                 AttentionSignal(
                     category=SignalCategory.VOLATILITY_BREAKOUT,
                     severity="MEDIUM",
-                    headline=f"📈 Elevated {direction} Momentum",
+                    headline=f"Elevated {direction} Momentum",
                     technical_detail=f"Price move is {z_vol:.1f}x 14d ATR",
                     badge_color="green" if ticker.change > 0 else "red",
                 )
@@ -55,7 +55,7 @@ class AnomalyDetector:
                 AttentionSignal(
                     category=SignalCategory.VOLUME_SURGE,
                     severity="HIGH" if rvol < 4.0 else "CRITICAL",
-                    headline=f"🔥 {rvol:.1f}x Volume Surge vs 20-Day Average",
+                    headline=f"{rvol:.1f}x Volume Surge vs 20-Day Average",
                     technical_detail=f"Current volume {ticker.volume:,} vs avg {ticker.avg_volume_20d:,}",
                     badge_color="green" if ticker.change >= 0 else "red",
                 )
@@ -65,7 +65,7 @@ class AnomalyDetector:
                 AttentionSignal(
                     category=SignalCategory.VOLUME_SURGE,
                     severity="MEDIUM",
-                    headline=f"📊 Above Average Liquidity ({rvol:.1f}x)",
+                    headline=f"Above Average Liquidity ({rvol:.1f}x)",
                     technical_detail=f"Volume {ticker.volume:,} is 60%+ above 20d baseline",
                     badge_color="neutral",
                 )
@@ -77,7 +77,7 @@ class AnomalyDetector:
                 AttentionSignal(
                     category=SignalCategory.CIRCUIT_ALERT,
                     severity="CRITICAL",
-                    headline=f"🔒 Approaching Upper Circuit (₹{ticker.price_band.upper_circuit:,.2f})",
+                    headline=f"Approaching Upper Circuit (₹{ticker.price_band.upper_circuit:,.2f})",
                     technical_detail=f"Trading within {ticker.upper_circuit_distance_pct:.2f}% of daily upper band",
                     badge_color="circuit",
                 )
@@ -87,7 +87,7 @@ class AnomalyDetector:
                 AttentionSignal(
                     category=SignalCategory.CIRCUIT_ALERT,
                     severity="CRITICAL",
-                    headline=f"⚠️ Warning: Approaching Lower Circuit (₹{ticker.price_band.lower_circuit:,.2f})",
+                    headline=f"Warning: Approaching Lower Circuit (₹{ticker.price_band.lower_circuit:,.2f})",
                     technical_detail=f"Trading within {ticker.lower_circuit_distance_pct:.2f}% of daily lower band",
                     badge_color="circuit",
                 )
@@ -99,7 +99,7 @@ class AnomalyDetector:
                 AttentionSignal(
                     category=SignalCategory.LEVEL_BREACH,
                     severity="HIGH",
-                    headline=f"🚀 52-Week High Breakout (₹{ticker.week_52_high:,.2f})",
+                    headline=f"52-Week High Breakout (₹{ticker.week_52_high:,.2f})",
                     technical_detail="Stock traded at or within 0.5% of its 52-week peak",
                     badge_color="green",
                 )
@@ -115,7 +115,7 @@ class AnomalyDetector:
                     AttentionSignal(
                         category=SignalCategory.BENCHMARK_DECOUPLING,
                         severity="MEDIUM",
-                        headline="🛡️ Defying Broad Market Fall",
+                        headline="Defying Broad Market Fall",
                         technical_detail=f"Up {ticker.change_percent:+.2f}% while NIFTY 50 is down {benchmark.change_percent:+.2f}%",
                         badge_color="green",
                     )

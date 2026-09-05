@@ -53,7 +53,7 @@ def test_rule_engine_briefing_circuit_alert():
     circuit_signal = AttentionSignal(
         category=SignalCategory.CIRCUIT_ALERT,
         severity="CRITICAL",
-        headline="🔒 Approaching Upper Circuit (₹7,560)",
+        headline="Approaching Upper Circuit (₹7,560)",
         technical_detail="0.4% from upper band",
         badge_color="circuit",
     )

@@ -17,7 +17,7 @@ class AttentionSignal(BaseModel):
     """A human-translated market signal explaining why an asset moved"""
     category: SignalCategory
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-    headline: str = Field(description="Human-friendly headline, e.g. '⚡ 3.2x Volume surge for 1:30 PM'")
+    headline: str = Field(description="Human-friendly headline, e.g. '3.2x Volume surge for 1:30 PM'")
     technical_detail: str = Field(description="Underlying quantitative measurement")
     badge_color: Literal["green", "red", "amber", "circuit", "neutral"]
 

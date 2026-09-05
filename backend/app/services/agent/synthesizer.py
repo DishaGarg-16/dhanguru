@@ -117,10 +117,10 @@ class RuleEngineBriefingFallback:
         fomo_guard = None
         if circuit_movers:
             c_sym = circuit_movers[0].symbol
-            fomo_guard = f"⚠️ Capital Protection Notice: {c_sym} is near its circuit band. Order execution and liquidity may be constrained."
+            fomo_guard = f"Capital Protection Notice: {c_sym} is near its circuit band. Order execution and liquidity may be constrained."
         elif any(a.urgency_score >= 85 for a in anomalies):
             highest_urgency = max(anomalies, key=lambda x: x.urgency_score)
-            fomo_guard = f"🛡️ High Volatility Alert: {highest_urgency.symbol} is undergoing high retail turnover. Avoid chasing price extensions."
+            fomo_guard = f"High Volatility Alert: {highest_urgency.symbol} is undergoing high retail turnover. Avoid chasing price extensions."
 
         return ExecutiveBriefing(
             time_away_human=away_str,

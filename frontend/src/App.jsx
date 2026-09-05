@@ -338,7 +338,7 @@ export default function App() {
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1C2432'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  🔥 Surge ZOMATO (3.4x volume)
+                  Surge ZOMATO (3.4x volume)
                 </button>
                 <button
                   onClick={() => triggerAnomaly('TRENT', 'CIRCUIT_APPROACH')}
@@ -346,7 +346,7 @@ export default function App() {
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1C2432'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  🔒 Push TRENT to Upper Circuit
+                  Push TRENT to Upper Circuit
                 </button>
                 <button
                   onClick={() => triggerAnomaly('RELIANCE', 'BREAKOUT_52W')}
@@ -354,7 +354,7 @@ export default function App() {
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1C2432'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  🚀 Breakout RELIANCE (52w High)
+                  Breakout RELIANCE (52w High)
                 </button>
               </div>
             )}

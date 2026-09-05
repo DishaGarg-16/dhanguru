@@ -56,10 +56,36 @@ async def get_user_watchlist(user_id: str = "default_user"):
     }
 
 
+import time
+
+# Bot protection: max 20 additions per 60 seconds per user
+_recent_adds: dict[str, list[float]] = {}
+MAX_WATCHLIST_CAPACITY = 100
+
+
 @router.post("/symbols")
 async def add_symbol_to_watchlist(req: WatchlistSymbolRequest, user_id: str = "default_user"):
     """Add a symbol to the watchlist, dynamically registering with market provider if new"""
     from backend.app.services.market_data.factory import get_market_provider
+
+    # 1. Capacity check (Generous 100 stocks)
+    current_wl = watchlist_store.get_watchlist(user_id)
+    if len(current_wl.symbols) >= MAX_WATCHLIST_CAPACITY:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Watchlist capacity limit reached (maximum {MAX_WATCHLIST_CAPACITY} stocks)."
+        )
+
+    # 2. Bot throttle (Sliding window: max 20 adds per 60 seconds)
+    now = time.time()
+    user_adds = [t for t in _recent_adds.get(user_id, []) if now - t < 60.0]
+    if len(user_adds) >= 20:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many symbols added rapidly. Please slow down."
+        )
+    user_adds.append(now)
+    _recent_adds[user_id] = user_adds
 
     sym = req.symbol.strip().upper()
     snap = central_store.get_latest(sym)

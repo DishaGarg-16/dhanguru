@@ -29,7 +29,7 @@ export function CircuitProximityBar({
           border: '1px solid rgba(255, 107, 74, 0.3)',
         }}
       >
-        🔒 Near Upper Limit
+        Near Upper Limit
       </span>
     );
   } else if (isNearLower) {
@@ -45,7 +45,7 @@ export function CircuitProximityBar({
           border: '1px solid rgba(235, 91, 86, 0.3)',
         }}
       >
-        ⚠️ Near Lower Limit
+        Near Lower Limit
       </span>
     );
   }

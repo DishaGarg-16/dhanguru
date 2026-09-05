@@ -6,7 +6,7 @@ router = APIRouter(prefix="/api/stocks", tags=["stocks"])
 
 
 @router.get("/search")
-async def search_stocks(q: str = Query(default="", description="Search symbol, company name, or sector")):
+async def search_stocks(q: str = Query(default="", max_length=50, description="Search symbol, company name, or sector")):
     """Typeahead search matching curated catalog and live Yahoo Finance search"""
     results = await stock_catalog.search_stocks(q)
     return {

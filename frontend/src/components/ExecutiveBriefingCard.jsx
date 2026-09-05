@@ -34,7 +34,7 @@ export function ExecutiveBriefingCard({ briefing, onAcknowledge, acknowledging, 
         </div>
         <div>
           <div style={{ fontSize: '14px', fontWeight: 700, color: '#FFF' }}>
-            ⚡ AI Co-Pilot analyzing your watchlist delta with Ollama...
+            AI Co-Pilot analyzing your watchlist delta with Ollama...
           </div>
           <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>
             Computing 14-day ATR volatility bands and Relative Volume surges...
@@ -152,7 +152,7 @@ export function ExecutiveBriefingCard({ briefing, onAcknowledge, acknowledging, 
               transition: 'all 0.2s ease',
             }}
           >
-            {briefing.generated_by === 'AI_AGENT' ? '⚡ AI Co-Pilot' : '🛡️ Rule Engine Fallback'}
+            {briefing.generated_by === 'AI_AGENT' ? 'AI Co-Pilot' : 'Rule Engine Fallback'}
           </span>
         </div>
       </div>

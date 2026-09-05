@@ -123,3 +123,38 @@ def test_dynamic_watchlist_add_symbol(client):
     snap = central_store.get_latest(test_sym)
     assert snap is not None
     assert snap.symbol == test_sym
+
+
+def test_symbol_sanitization_rejects_malicious_characters(client):
+    # Reject XSS or script tags
+    resp = client.post("/api/watchlist/symbols", json={"symbol": "<script>alert(1)</script>"})
+    assert resp.status_code == 422
+
+    # Reject whitespace or SQL chars
+    resp2 = client.post("/api/watchlist/symbols", json={"symbol": "DROP TABLE;"})
+    assert resp2.status_code == 422
+
+
+def test_search_query_max_length_constrained(client):
+    # Over 50 chars should be rejected by validation
+    resp = client.get(f"/api/stocks/search?q={'A' * 60}")
+    assert resp.status_code == 422
+
+
+def test_bot_throttle_sliding_window(client):
+    # Mock register_symbol so test doesn't hammer Yahoo Finance over internet
+    with patch("backend.app.services.market_data.factory.get_market_provider") as mock_get_provider:
+        mock_provider = AsyncMock()
+        mock_snap = MagicMock(symbol="TEST")
+        mock_provider.register_symbol.return_value = mock_snap
+        mock_get_provider.return_value = mock_provider
+
+        # Rapidly adding 20 symbols
+        for i in range(20):
+            resp = client.post("/api/watchlist/symbols?user_id=test_bot", json={"symbol": f"SYM{i}"})
+            assert resp.status_code == 200
+
+        # 21st addition triggers 429 Too Many Requests
+        blocked_resp = client.post("/api/watchlist/symbols?user_id=test_bot", json={"symbol": "SYM_OVERFLOW"})
+        assert blocked_resp.status_code == 429
+        assert "Too many symbols" in blocked_resp.json()["detail"]

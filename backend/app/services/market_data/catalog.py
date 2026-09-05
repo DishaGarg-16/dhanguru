@@ -158,12 +158,17 @@ class StockCatalogService:
                 results.append(item)
                 seen.add(sym)
 
-        # 2. Query Yahoo Finance search endpoint if query is at least 2 chars
-        if len(q) >= 2:
+        # 2. Query Yahoo Finance search endpoint if query is between 2 and 50 chars
+        if 2 <= len(q) <= 50:
             try:
                 client = await self._get_client()
-                url = f"https://query2.finance.yahoo.com/v1/finance/search?q={query.strip()}&quotesCount=15&newsCount=0"
-                resp = await client.get(url)
+                url = "https://query2.finance.yahoo.com/v1/finance/search"
+                params = {
+                    "q": query.strip()[:50],
+                    "quotesCount": 15,
+                    "newsCount": 0,
+                }
+                resp = await client.get(url, params=params)
                 if resp.status_code == 200:
                     data = resp.json()
                     quotes = data.get("quotes", [])

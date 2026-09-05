@@ -18,7 +18,12 @@ class UserWatchlist(BaseModel):
 
 
 class WatchlistSymbolRequest(BaseModel):
-    symbol: str = Field(min_length=1, max_length=20, description="NSE/BSE ticker symbol")
+    symbol: str = Field(
+        min_length=1,
+        max_length=20,
+        pattern=r"^[A-Za-z0-9&._-]+$",
+        description="NSE/BSE ticker symbol (alphanumeric, &, -, _, .)",
+    )
 
 
 class ExecutiveBriefing(BaseModel):
