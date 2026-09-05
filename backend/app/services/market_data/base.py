@@ -30,3 +30,8 @@ class BaseMarketProvider(ABC):
     async def stop(self) -> None:
         """Stop provider feed"""
         pass
+
+    @abstractmethod
+    async def register_symbol(self, symbol: str) -> Optional[TickerSnapshot]:
+        """Register and fetch/seed an initial snapshot for a new symbol"""
+        pass

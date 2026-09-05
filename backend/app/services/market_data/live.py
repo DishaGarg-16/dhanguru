@@ -374,6 +374,49 @@ class LiveMarketProvider(BaseMarketProvider):
             await self._http_client.aclose()
             self._http_client = None
 
+    async def register_symbol(self, symbol: str) -> Optional[TickerSnapshot]:
+        """Register and immediately fetch live quote for a new symbol"""
+        sym = symbol.upper()
+        if sym not in self.symbols:
+            self.symbols.append(sym)
+
+        if sym not in self._tickers:
+            meta = SEED_UNIVERSE.get(sym, {
+                "company_name": sym,
+                "base_price": 1000.0,
+                "band_pct": 10.0,
+                "avg_volume_20d": 5000000,
+                "atr_14": 15.0,
+                "week_52_high": 1200.0,
+                "week_52_low": 800.0,
+            })
+            base = meta["base_price"]
+            band_pct = meta["band_pct"]
+            upper = round(base * (1 + band_pct / 100), 2)
+            lower = round(base * (1 - band_pct / 100), 2)
+            self._tickers[sym] = TickerSnapshot(
+                symbol=sym,
+                company_name=meta["company_name"],
+                exchange="NSE",
+                current_price=base,
+                open_price=base,
+                high_price=base,
+                low_price=base,
+                prev_close=base,
+                change=0.0,
+                change_percent=0.0,
+                volume=int(meta["avg_volume_20d"] * 0.5),
+                avg_volume_20d=meta["avg_volume_20d"],
+                atr_14=meta["atr_14"],
+                week_52_high=meta["week_52_high"],
+                week_52_low=meta["week_52_low"],
+                price_band=PriceBand(band_percent=band_pct, upper_circuit=upper, lower_circuit=lower),
+                timestamp=datetime.now(),
+            )
+
+        snap = await self.fetch_ticker_quote(sym)
+        return snap or self._tickers.get(sym)
+
     # Anomaly testing helpers (Deterministic triggers for evaluator testing)
     def trigger_circuit_approach(self, symbol: str, upper: bool = True) -> TickerSnapshot:
         snap = self._tickers[symbol.upper()]

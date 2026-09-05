@@ -58,17 +58,26 @@ async def get_user_watchlist(user_id: str = "default_user"):
 
 @router.post("/symbols")
 async def add_symbol_to_watchlist(req: WatchlistSymbolRequest, user_id: str = "default_user"):
-    """Add a symbol to the watchlist"""
+    """Add a symbol to the watchlist, dynamically registering with market provider if new"""
+    from backend.app.services.market_data.factory import get_market_provider
+
     sym = req.symbol.strip().upper()
-    # Check if symbol is valid in our market feed
-    if not central_store.get_latest(sym):
+    snap = central_store.get_latest(sym)
+
+    if not snap:
+        provider = get_market_provider()
+        snap = await provider.register_symbol(sym)
+        if snap:
+            central_store.update_ticker(snap, force=True)
+
+    if not snap:
         raise HTTPException(
             status_code=400,
-            detail=f"Symbol '{sym}' is not supported in the active market universe."
+            detail=f"Symbol '{sym}' could not be resolved or found in the market feed."
         )
 
     updated_wl = watchlist_store.add_symbol(sym, user_id=user_id)
-    return {"status": "success", "symbols": updated_wl.symbols}
+    return {"status": "success", "symbols": updated_wl.symbols, "added_ticker": snap}
 
 
 @router.delete("/symbols/{symbol}")

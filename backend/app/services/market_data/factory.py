@@ -102,6 +102,13 @@ class HybridMarketProvider(BaseMarketProvider):
 
         await self._active_provider.stop()
 
+    async def register_symbol(self, symbol: str) -> Optional[TickerSnapshot]:
+        """Register on both providers so transitions between live and simulator are seamless"""
+        sym = symbol.upper()
+        live_snap = await self.live_provider.register_symbol(sym)
+        sim_snap = await self.simulator.register_symbol(sym)
+        return live_snap if self._active_provider is self.live_provider else (sim_snap or live_snap)
+
     @property
     def _tickers(self) -> dict[str, TickerSnapshot]:
         return getattr(self._active_provider, "_tickers", self.simulator._tickers)
@@ -122,18 +129,35 @@ class HybridMarketProvider(BaseMarketProvider):
         return self.simulator.trigger_volume_surge(symbol, multiplier=multiplier)
 
 
-def get_market_provider(mode: Optional[str] = None) -> BaseMarketProvider:
+_provider_instance: Optional[BaseMarketProvider] = None
+
+
+def get_market_provider(mode: Optional[str] = None, force_new: bool = False) -> BaseMarketProvider:
     """
     Factory creating appropriate market data provider based on requested mode:
     - "AUTO": Intelligent hybrid (Live during market hours, simulator replay outside)
     - "LIVE": Real exchange data feed (freezes on close)
     - "MOCK": Pure deterministic simulator 24/7 (guaranteed offline presentation mode)
     """
+    global _provider_instance
+    if _provider_instance is not None and not force_new and mode is None:
+        return _provider_instance
+
     selected_mode = (mode or settings.MARKET_DATA_PROVIDER).upper()
 
     if selected_mode == "LIVE":
-        return LiveMarketProvider(poll_interval=settings.LIVE_POLL_INTERVAL_SEC)
+        inst = LiveMarketProvider(poll_interval=settings.LIVE_POLL_INTERVAL_SEC)
     elif selected_mode == "AUTO":
-        return HybridMarketProvider()
+        inst = HybridMarketProvider()
     else:  # Default to MOCK for safety and determinism
-        return IndianMarketSimulator(update_interval=settings.MOCK_UPDATE_INTERVAL_SEC)
+        inst = IndianMarketSimulator(update_interval=settings.MOCK_UPDATE_INTERVAL_SEC)
+
+    if mode is None and not force_new:
+        _provider_instance = inst
+    return inst
+
+
+def reset_market_provider():
+    """Reset cached provider instance (useful for unit testing)"""
+    global _provider_instance
+    _provider_instance = None

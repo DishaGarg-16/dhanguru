@@ -66,11 +66,13 @@ from backend.app.api.analytics import router as analytics_router
 from backend.app.api.watchlist import router as watchlist_router
 from backend.app.api.briefing import router as briefing_router
 from backend.app.api.stream import router as stream_router
+from backend.app.api.stocks import router as stocks_router
 
 app.include_router(analytics_router)
 app.include_router(watchlist_router)
 app.include_router(briefing_router)
 app.include_router(stream_router)
+app.include_router(stocks_router)
 
 
 @app.get("/")
