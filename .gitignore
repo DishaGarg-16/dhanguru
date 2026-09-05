@@ -18,6 +18,8 @@ build/
 *.db
 *.sqlite
 *.sqlite3
+*.watchlist_data.json
+.watchlist_data.json
 
 # Environment Variables & Secrets
 .env

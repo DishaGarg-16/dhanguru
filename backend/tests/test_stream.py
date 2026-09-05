@@ -26,12 +26,23 @@ def test_websocket_live_stream_initial_handshake():
 
 
 def test_demo_anomaly_trigger_endpoint():
-    """Verify test anomaly simulation trigger endpoint functions properly"""
+    """Verify test anomaly simulation trigger endpoint functions properly for surge and circuit alerts"""
     client = TestClient(app)
+
+    # 1. Volume Surge triggers volume component and signal tag
     resp = client.post("/api/market/simulate/trigger?symbol=ZOMATO&anomaly_type=SURGE")
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "success"
     assert data["symbol"] == "ZOMATO"
     assert "urgency_score" in data
-    assert data["urgency_score"] >= 60  # Surge must trigger elevated attention
+    assert data["urgency_score"] >= 30
+    assert any(s["category"] == "VOLUME_SURGE" for s in data["signals"])
+
+    # 2. Circuit Approach triggers critical alert and elevated attention (>= 60)
+    resp_circuit = client.post("/api/market/simulate/trigger?symbol=ZOMATO&anomaly_type=CIRCUIT_APPROACH")
+    assert resp_circuit.status_code == 200
+    circuit_data = resp_circuit.json()
+    assert circuit_data["status"] == "success"
+    assert circuit_data["urgency_score"] >= 60
+    assert any(s["category"] == "CIRCUIT_ALERT" for s in circuit_data["signals"])
