@@ -8,7 +8,7 @@ export function useMarketStream(onTickReceived) {
   const reconnectTimeoutRef = useRef(null);
 
   const connect = useCallback(() => {
-    // In dev mode (port 5173), direct connect to backend 127.0.0.1:8000; in prod/docker, use current host
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = import.meta.env.DEV ? '127.0.0.1:8000' : window.location.host;
     const wsUrl = `${protocol}//${host}/ws/live`;
 

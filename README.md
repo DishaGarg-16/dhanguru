@@ -1,7 +1,6 @@
 # DHANGURU (धनगुरु)
 ### Autonomous Market Watchlist & Delta Intelligence Co-Pilot for Indian Equities (NSE/BSE)
 
-> **Built for Groww Hackathon**  
 > *Transforming noisy, passive ticker grids into an active, responsible market intelligence co-pilot.*
 
 ---
@@ -79,6 +78,16 @@ Financial applications cannot blindly pipe customer watchlists to external US cl
 - **Cloud APIs (Groq / Gemini / OpenAI):** Optional sub-300ms serverless inference.
 - **Deterministic Rule Engine Fallback:** 0ms instantaneous briefing generator guaranteeing **100% financial SLA uptime** even during network outages.
 
+### 5. Dynamic Stock Discovery & Sectoral Navigation
+- **8 Curated Sector Filters:** Browse stocks across `NIFTY 50`, `Automobile`, `Banking & Finance`, `Information Technology`, `FMCG & Retail`, `Energy & Metals`, `Pharma & Healthcare`, and `Consumer Internet`.
+- **Live Typeahead Search:** 250ms debounced search query across 2,000+ Indian equities (NSE/BSE) with company names and live exchange resolution.
+- **On-the-Fly Stream Ingestion:** Dynamically registers newly added symbols directly into the background market stream and ring-buffer store without requiring a server reboot or pipeline interruption.
+
+### 6. Production Hardening & Adversarial Protection
+- **Input Sanitization:** Strict regex enforcement (`^[A-Za-z0-9&._-]+$`) on all equity symbols and URL parameter encoding to mitigate injection risks.
+- **Watchlist Capacity Ceiling:** Hard cap at 100 symbols per watchlist to preserve deterministic 60fps rendering and memory boundaries.
+- **Human-Speed Bot Throttling:** Sliding-window rate limiting restricting additions to 20 operations per 60 seconds per IP, protecting backend data pipelines against automated script flooding while keeping human exploration frictionless.
+
 ---
 
 ## Quickstart Guide
@@ -123,6 +132,13 @@ npm run dev
 ```
 *Frontend runs on `http://localhost:5173`.*
 
+#### 4. Run Automated Test Suite
+Verify all statistical math, streaming WebSockets, catalog search, and security bounds:
+```powershell
+uv run pytest backend/tests/
+```
+*(Executes 38 passing unit and integration tests across analytics, briefing, catalog, live data, schedule, and stream).*
+
 ---
 
 ## Evaluator / Judge Demo Walkthrough
@@ -141,14 +157,17 @@ Judges evaluating outside trading hours (9:15 AM – 3:30 PM IST) can test all r
 4. **1-Click Checkpoint Acknowledge:**
    - Click **`Acknowledge & Mark All Caught Up`**.
    - Notice the timer instantly reset to `0s` (`All caught up. Monitoring in real time`) in under 50ms.
-5. **Manage Watchlist:**
-   - Click **`+ Add Stock`** to add any Indian ticker (e.g. `TCS`, `BAJFINANCE`, `SBIN`).
+5. **Dynamic Stock Discovery & Sector Navigation:**
+   - Click **`+ Add Stock`** to open the discovery modal.
+   - Click sectoral chips like **`Automobile`**, **`Banking & Finance`**, or **`IT & Tech`** to explore curated stocks.
+   - Type in the search box (e.g., `mahi` or `zom`) to see real-time typeahead suggestions across 2,000+ Indian equities.
+   - Click **`+ Add`** on any stock to observe it instantly register into the live ticker stream and ring-buffer store without restarting the backend.
 
 ---
 
 ## Responsible Investing / FOMO Guard
 
-Groww's core ethos is retail investor empowerment and education. Dhanguru builds this directly into the AI co-pilot:
+Retail investor empowerment, discipline, and capital protection are core to Dhanguru:
 - **Anti-Chasing Alerts:** When a stock has spiked +5% on low Relative Volume (`< 0.8x`), Dhanguru flags it as *illiquid price extension* rather than a genuine breakout.
 - **Circuit Liquidity Warnings:** If a stock is within 0.5% of its upper circuit band, Dhanguru warns the user that liquidity and order execution constraints may trap exit capital.
 
@@ -163,8 +182,10 @@ Groww's core ethos is retail investor empowerment and education. Dhanguru builds
 | **AI Layer** | Pydantic AI, Local Ollama (`llama3.2` / `qwen2.5`), Cloud Groq / Gemini |
 | **Frontend** | React 18, Vite, Obsidian Dark Glassmorphism, Lucide Icons |
 | **Styling** | Pure Vanilla CSS Design System (`#0B0E14` obsidian, `#00D09C` emerald) |
+| **Containerization** | Docker, Docker Compose, Multi-stage Nginx Reverse Proxy |
+| **Quality & Tests** | Pytest (38 passing unit & integration tests), Starlette TestClient |
 
 ---
 
 ## License
-MIT License. Built for the Groww Hackathon.
+MIT License.
