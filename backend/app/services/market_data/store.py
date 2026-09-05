@@ -17,15 +17,40 @@ class CentralTickerStore:
         # Rolling circular buffer of past snapshots per symbol (for delta calculations)
         self._history: dict[str, deque[TickerSnapshot]] = {}
         self._benchmark: Optional[BenchmarkSnapshot] = None
+        self._frozen: bool = False
+        self._frozen_at: Optional[datetime] = None
 
-    def update_ticker(self, snapshot: TickerSnapshot) -> None:
-        """Store new tick snapshot in latest registry and circular history buffer"""
+    def freeze(self, timestamp: Optional[datetime] = None) -> None:
+        """Freeze store to lock official closing prices and reject incoming tick drift"""
+        self._frozen = True
+        self._frozen_at = timestamp or datetime.now()
+
+    def unfreeze(self) -> None:
+        """Unfreeze store to allow live or simulated ticks"""
+        self._frozen = False
+        self._frozen_at = None
+
+    @property
+    def is_frozen(self) -> bool:
+        return self._frozen
+
+    @property
+    def frozen_at(self) -> Optional[datetime]:
+        return self._frozen_at
+
+    def update_ticker(self, snapshot: TickerSnapshot, force: bool = False) -> bool:
+        """Store new tick snapshot in latest registry and circular history buffer.
+        Returns False if update was rejected due to freeze lock."""
+        if self._frozen and not force:
+            return False
+
         sym = snapshot.symbol.upper()
         self._latest[sym] = snapshot
 
         if sym not in self._history:
             self._history[sym] = deque(maxlen=self.history_limit)
         self._history[sym].append(snapshot)
+        return True
 
     def update_benchmark(self, snapshot: BenchmarkSnapshot) -> None:
         self._benchmark = snapshot

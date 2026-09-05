@@ -23,7 +23,10 @@ async def lifespan(app: FastAPI):
     from backend.app.services.analytics.anomaly_detector import AnomalyDetector
 
     async def on_tick(updated_snap: TickerSnapshot):
-        central_store.update_ticker(updated_snap)
+        accepted = central_store.update_ticker(updated_snap)
+        if not accepted:
+            return
+
         try:
             bench = central_store.get_benchmark()
             eval_res = AnomalyDetector.evaluate(updated_snap, bench)
@@ -82,10 +85,14 @@ async def root():
 
 @app.get("/health")
 async def health_check():
+    from backend.app.core.schedule import MarketScheduleManager
     return {
         "status": "healthy",
         "service": settings.PROJECT_NAME,
         "provider": settings.MARKET_DATA_PROVIDER,
+        "session_status": MarketScheduleManager.get_session_status(),
+        "is_market_open": MarketScheduleManager.is_market_open(),
+        "is_store_frozen": central_store.is_frozen,
         "tracked_symbols": len(central_store.get_all_latest()),
     }
 
