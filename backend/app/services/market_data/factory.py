@@ -42,6 +42,25 @@ class HybridMarketProvider(BaseMarketProvider):
         if self._callback:
             await self._callback(snap)
 
+    async def _sync_real_market_baseline(self) -> None:
+        """Fetch actual market closing quotes for all symbols to seed the simulator baseline"""
+        try:
+            logger.info("HybridMarketProvider: Synchronizing live/closing market quotes to seed simulator baseline...")
+            bench = await self.live_provider.fetch_benchmark_quote()
+            if bench and bench.current_value > 0:
+                self.simulator._benchmark = bench
+
+            syms = list(self.live_provider.symbols)
+            tasks = [self.live_provider.fetch_ticker_quote(sym) for sym in syms]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            for sym, res in zip(syms, results):
+                if isinstance(res, TickerSnapshot) and res.current_price > 0:
+                    self.simulator._tickers[sym] = res.model_copy()
+                    logger.info("Seeded simulator for %s with market price: %.2f", sym, res.current_price)
+        except Exception as e:
+            logger.warning("Could not sync live quotes to simulator baseline: %s", e)
+
     async def _supervise_loop(self) -> None:
         """Periodic background supervisor checking market hours and toggling providers"""
         while self._running:
@@ -58,6 +77,11 @@ class HybridMarketProvider(BaseMarketProvider):
                                 "LIVE" if is_open else "SIMULATOR_REPLAY")
                     # Stop previous provider
                     await self._active_provider.stop()
+                    # When switching to simulator, copy over latest live snapshots
+                    if target_provider is self.simulator:
+                        for sym, snap in self.live_provider._tickers.items():
+                            if snap and snap.current_price > 0:
+                                self.simulator._tickers[sym] = snap.model_copy()
                     # Start target provider
                     self._active_provider = target_provider
                     await self._active_provider.start(on_tick_callback=self._handle_tick)
@@ -83,6 +107,11 @@ class HybridMarketProvider(BaseMarketProvider):
 
         # Determine which provider should run at startup
         is_open = MarketScheduleManager.is_market_open()
+
+        # If market is closed, fetch actual market closing quotes first to seed simulator
+        if not is_open:
+            await self._sync_real_market_baseline()
+
         self._active_provider = self.live_provider if is_open else self.simulator
         logger.info("HybridMarketProvider starting with mode: %s (is_market_open=%s)",
                     self.active_mode, is_open)
@@ -107,6 +136,9 @@ class HybridMarketProvider(BaseMarketProvider):
         sym = symbol.upper()
         live_snap = await self.live_provider.register_symbol(sym)
         sim_snap = await self.simulator.register_symbol(sym)
+        if live_snap and live_snap.current_price > 0:
+            self.simulator._tickers[sym] = live_snap.model_copy()
+            sim_snap = self.simulator._tickers[sym]
         return live_snap if self._active_provider is self.live_provider else (sim_snap or live_snap)
 
     @property
