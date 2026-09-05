@@ -89,21 +89,32 @@ Financial applications cannot blindly pipe customer watchlists to external US cl
 - Node.js 18+ & `npm`
 - [Ollama](https://ollama.com/) (Optional, for 100% offline local AI)
 
-### 1. Clone & Configure
+### Option A: 1-Command Startup with Docker (Recommended)
+
+```powershell
+docker compose up --build
+```
+*Frontend runs on `http://localhost:3000` with Nginx reverse proxying to backend on `http://localhost:8000`.*
+
+---
+
+### Option B: Local Development Setup
+
+#### 1. Clone & Configure
 ```bash
 git clone https://github.com/DishaGarg-16/dhanguru.git
 cd dhanguru
 copy .env.example .env
 ```
 
-### 2. Start Backend (FastAPI + WebSockets)
+#### 2. Start Backend (FastAPI + WebSockets)
 ```powershell
 uv sync
 uv run uvicorn backend.app.main:app --reload
 ```
 *Backend runs on `http://127.0.0.1:8000`.*
 
-### 3. Start Frontend (React + Vite)
+#### 3. Start Frontend (React + Vite)
 In a second terminal:
 ```powershell
 cd frontend
