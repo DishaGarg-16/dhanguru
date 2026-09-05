@@ -31,8 +31,10 @@ graph TD
     D -->|NIFTY 50 Decoupling| E
     
     E --> F[0-100 Urgency Scoring & Outlier Filter]
+    F -->|Dynamic Row Sorting & Outlier Filter| C
+    F -->|Ranks Top Attention Anomalies| H[Checkpoint Diff Engine]
     
-    G[User Session Checkpoint T_last_seen] --> H[Checkpoint Diff Engine]
+    G[User Session Checkpoint T_last_seen] --> H
     B --> H
     H --> I[Watchlist Delta Report]
     
@@ -52,15 +54,15 @@ graph TD
 ## Key Features & Product Highlights
 
 ### 1. "Since You Checked" Executive Briefing
-- When you open the dashboard after being away (e.g., away for 35m or 3h), Dhanguru compares $T_{\text{last\_seen}}$ against $T_{\text{now}}$.
+- When you open the dashboard after being away (e.g., away for 35m or 3h), Dhanguru compares `T_last_seen` against `T_now`.
 - Generates a **crisp 1-sentence macro headline**, assigns market mood (`BULLISH`, `BEARISH`, `VOLATILE`, `CALM`), and provides 2–3 institutional bullet points.
 - **FOMO Guard & Capital Protection:** Proactively alerts users if a stock is within 1% of its upper circuit band, advising against chasing illiquid extensions.
 - **1-Click Acknowledge:** Mark all caught up in `< 50ms` to reset your session checkpoint.
 
 ### 2. Quantitative Anomaly Detection (No Hallucinations)
 All quantitative math is computed **100% deterministically in Python** before reaching the LLM:
-- **Volatility Breakouts ($Z_{\text{vol}}$):** Measured against rolling 14-day Average True Range (ATR).
-- **Relative Volume ($\text{RVol}$):** Measured against authentic 20-day time-of-day volume curves.
+- **Volatility Breakouts (`Z_vol`):** Measured against rolling 14-day Average True Range (ATR).
+- **Relative Volume (`RVol`):** Measured against authentic 20-day time-of-day volume curves.
 - **Circuit Limit Warnings:** Live proximity meters for NSE 5%, 10%, and 20% price bands.
 - **Composite Urgency Score (0–100):** Weighted multi-factor attention score sorting your watchlist by significance rather than alphabetical order.
 
@@ -136,7 +138,7 @@ Judges evaluating outside trading hours (9:15 AM – 3:30 PM IST) can test all r
 ## Responsible Investing / FOMO Guard
 
 Groww's core ethos is retail investor empowerment and education. Dhanguru builds this directly into the AI co-pilot:
-- **Anti-Chasing Alerts:** When a stock has spiked +5% on low Relative Volume ($< 0.8\times$), Dhanguru flags it as *illiquid price extension* rather than a genuine breakout.
+- **Anti-Chasing Alerts:** When a stock has spiked +5% on low Relative Volume (`< 0.8x`), Dhanguru flags it as *illiquid price extension* rather than a genuine breakout.
 - **Circuit Liquidity Warnings:** If a stock is within 0.5% of its upper circuit band, Dhanguru warns the user that liquidity and order execution constraints may trap exit capital.
 
 ---
@@ -146,7 +148,7 @@ Groww's core ethos is retail investor empowerment and education. Dhanguru builds
 | Layer | Technologies |
 | :--- | :--- |
 | **Backend** | Python 3.12, FastAPI, Uvicorn, WebSockets, Pydantic v2 |
-| **Data Engine** | NumPy (rolling ATR & $Z$-scores), Ring-Buffer History |
+| **Data Engine** | NumPy (rolling ATR & Z-scores), Ring-Buffer History |
 | **AI Layer** | Pydantic AI, Local Ollama (`llama3.2` / `qwen2.5`), Cloud Groq / Gemini |
 | **Frontend** | React 18, Vite, Obsidian Dark Glassmorphism, Lucide Icons |
 | **Styling** | Pure Vanilla CSS Design System (`#0B0E14` obsidian, `#00D09C` emerald) |
