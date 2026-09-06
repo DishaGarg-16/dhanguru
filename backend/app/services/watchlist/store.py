@@ -24,7 +24,9 @@ class WatchlistStore:
     def __init__(self, storage_path: Optional[Path] = None):
         self.storage_path = storage_path or (Path(__file__).resolve().parent.parent.parent.parent / ".watchlist_data.json")
         self._watchlists: dict[str, UserWatchlist] = {}
+        self._last_ack_time: dict[str, datetime] = {}
         self._load()
+
 
     def _load(self) -> None:
         if self.storage_path.exists():
@@ -101,12 +103,22 @@ class WatchlistStore:
         return wl
 
     def acknowledge_session(self, user_id: str = "default_user") -> UserWatchlist:
-        """Mark user as 'caught up', resetting checkpoint timestamp to now"""
+        """Mark user as 'caught up', resetting checkpoint timestamp to now.
+        Includes a 5-second cooldown guard against DoS / disk I/O flooding."""
         wl = self.get_watchlist(user_id)
-        wl.last_seen_at = datetime.now()
-        wl.updated_at = datetime.now()
+        now = datetime.now()
+        last_ack = self._last_ack_time.get(user_id)
+
+        # If user acknowledged within the last 5 seconds, return immediately without rewriting disk
+        if last_ack and (now - last_ack).total_seconds() < 5:
+            return wl
+
+        self._last_ack_time[user_id] = now
+        wl.last_seen_at = now
+        wl.updated_at = now
         self._save()
         return wl
+
 
 
 watchlist_store = WatchlistStore()

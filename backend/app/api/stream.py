@@ -1,7 +1,7 @@
 import asyncio
 import json
 from datetime import datetime, timezone, timedelta
-from typing import List, Literal
+from typing import List, Literal, Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from backend.app.models.ticker import TickerSnapshot
 from backend.app.services.market_data.store import central_store
@@ -124,6 +124,10 @@ async def get_session_info():
     return get_market_session_status()
 
 
+# Cooldown guard for simulation trigger against bot spam
+_last_simulation_trigger: Optional[datetime] = None
+
+
 @router.post("/api/market/simulate/trigger")
 async def trigger_test_anomaly(
     symbol: str,
@@ -132,13 +136,24 @@ async def trigger_test_anomaly(
     """
     Demo / Testing endpoint: Force-trigger a market anomaly on demand
     so evaluators can witness live real-time detection immediately.
+    Protected with a 3-second cooldown against bot floods.
     """
+    global _last_simulation_trigger
+    now = datetime.now()
+    if _last_simulation_trigger and (now - _last_simulation_trigger).total_seconds() < 3.0:
+        return {
+            "status": "throttled",
+            "message": "Simulation trigger cooling down. Please wait 3 seconds before next trigger.",
+        }
+    _last_simulation_trigger = now
+
     from backend.app.main import simulator
     from backend.app.services.analytics.anomaly_detector import AnomalyDetector
 
     sym = symbol.upper()
     if sym not in simulator._tickers:
         return {"error": f"Symbol {sym} not found"}
+
 
     if anomaly_type == "CIRCUIT_APPROACH":
         updated_snap = simulator.trigger_circuit_approach(sym, upper=True)
