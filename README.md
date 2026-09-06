@@ -2,8 +2,10 @@
 ### Autonomous Market Watchlist & Delta Intelligence Co-Pilot for Indian Equities (NSE/BSE)
 
 > *Transforming noisy, passive ticker grids into an active, responsible market intelligence co-pilot.*
+
 Try it live here! https://dhanguru.onrender.com/
 ---
+
 
 ## Executive Summary
 
@@ -192,6 +194,3 @@ Retail investor empowerment, discipline, and capital protection are core to Dhan
 | **Quality & Tests** | Pytest (38 passing unit & integration tests), Starlette TestClient |
 
 ---
-
-## License
-MIT License.
