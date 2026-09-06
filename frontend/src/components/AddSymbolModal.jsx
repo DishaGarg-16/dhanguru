@@ -124,19 +124,7 @@ export function AddSymbolModal({ isOpen, onClose, onAddSymbol, existingSymbols =
       onClick={onClose}
     >
       <div
-        className="glass-card"
-        style={{
-          width: '100%',
-          maxWidth: '560px',
-          maxHeight: '88vh',
-          display: 'flex',
-          flexDirection: 'column',
-          backgroundColor: '#111620',
-          border: '1px solid #232D3F',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 24px 48px rgba(0,0,0,0.7)',
-        }}
+        className="glass-card add-symbol-modal-panel"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -203,16 +191,7 @@ export function AddSymbolModal({ isOpen, onClose, onAddSymbol, existingSymbols =
         </div>
 
         {/* Sector Filter Chips */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '6px',
-            overflowX: 'auto',
-            paddingBottom: '8px',
-            marginBottom: '12px',
-            scrollbarWidth: 'none',
-          }}
-        >
+        <div className="category-scroll-container" style={{ marginBottom: '12px' }}>
           {POPULAR_CATEGORIES.map((cat) => {
             const isSelected = selectedCategory === cat.id && !query.trim();
             return (

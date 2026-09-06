@@ -41,17 +41,7 @@ export function WatchlistTable({ items, onSelectStock, onRemoveStock }) {
         return (
           <div
             key={stock.symbol}
-            className="glass-card"
-            style={{
-              padding: '16px 20px',
-              display: 'grid',
-              gridTemplateColumns: 'minmax(200px, 1.4fr) minmax(180px, 1fr) minmax(160px, 1fr)',
-              alignItems: 'center',
-              gap: '20px',
-              cursor: 'pointer',
-              position: 'relative',
-              borderRadius: '12px',
-            }}
+            className="glass-card watchlist-row"
             onClick={() => onSelectStock(stock)}
           >
             {/* 1. Left: Symbol, Company & Human Signal Badges */}
@@ -156,14 +146,7 @@ export function WatchlistTable({ items, onSelectStock, onRemoveStock }) {
             </div>
 
             {/* 3. Right: Live Price, % Change & Attention Meter */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                gap: '18px',
-              }}
-            >
+            <div className="watchlist-col-actions">
               <div style={{ textAlign: 'right' }}>
                 <div
                   className="font-mono"

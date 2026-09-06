@@ -203,21 +203,10 @@ export default function App() {
   const isBenchPos = (benchmark?.change_percent ?? 0) >= 0;
 
   return (
-    <div style={{ minHeight: '100vh', padding: '24px 32px', maxWidth: '1280px', margin: '0 auto' }}>
+    <div className="app-container">
       {/* Top Header */}
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
-          paddingBottom: '20px',
-          borderBottom: '1px solid var(--border-subtle)',
-          marginBottom: '24px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <header className="app-header">
+        <div className="header-title-group">
           <div
             style={{
               width: '40px',
@@ -261,7 +250,7 @@ export default function App() {
         {/* Center: Live NIFTY 50 Benchmark Ticker */}
         {benchmark && typeof benchmark === 'object' && (
           <div
-            className="glass-card"
+            className="glass-card header-benchmark-ticker"
             style={{
               padding: '6px 16px',
               display: 'flex',
@@ -290,7 +279,7 @@ export default function App() {
         )}
 
         {/* Right Section: Interactive Demo Trigger + Freshness Beacon */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="header-right-controls">
           {/* Demo Anomaly Trigger (Great for judges/evaluators) */}
           <div style={{ position: 'relative' }}>
             <button

@@ -26,18 +26,7 @@ export function AssetDetailDrawer({ stock, onClose }) {
       onClick={onClose}
     >
       <div
-        style={{
-          width: '100%',
-          maxWidth: '440px',
-          height: '100%',
-          backgroundColor: '#11151D',
-          borderLeft: '1px solid #232C3A',
-          padding: '28px 24px',
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
-        }}
+        className="asset-drawer-panel"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Close & Header */}

@@ -55,7 +55,7 @@ export function ExecutiveBriefingCard({ briefing, onAcknowledge, acknowledging, 
 
   return (
     <div
-      className="glass-card"
+      className="glass-card briefing-card"
       style={{
         background: 'linear-gradient(135deg, rgba(19, 26, 38, 0.95) 0%, rgba(13, 17, 24, 0.95) 100%)',
         border: '1px solid rgba(0, 208, 156, 0.25)',
@@ -228,6 +228,7 @@ export function ExecutiveBriefingCard({ briefing, onAcknowledge, acknowledging, 
 
       {/* One-Click Catch-Up Button */}
       <button
+        className="briefing-ack-btn"
         onClick={onAcknowledge}
         disabled={acknowledging}
         style={{

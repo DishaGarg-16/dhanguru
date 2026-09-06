@@ -19,18 +19,9 @@ export function TimeTravelScrubber({
   ];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '14px',
-        marginBottom: '20px',
-      }}
-    >
+    <div className="scrubber-container">
       {/* Time Window Pills */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto' }}>
+      <div className="scrubber-pills-row">
         <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
           <Clock size={13} /> DELTA:
         </span>
@@ -60,7 +51,7 @@ export function TimeTravelScrubber({
       </div>
 
       {/* Right Controls: Search, Attention Filter & Add Stock */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div className="scrubber-controls-row">
         {/* Search Bar */}
         <div
           style={{
@@ -71,6 +62,7 @@ export function TimeTravelScrubber({
         >
           <Search size={14} style={{ position: 'absolute', left: '10px', color: '#64748B' }} />
           <input
+            className="scrubber-search-input"
             type="text"
             placeholder="Filter symbols..."
             value={searchQuery}
