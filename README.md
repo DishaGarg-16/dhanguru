@@ -135,9 +135,9 @@ ollama run llama3.2
 
 ---
 
-## Evaluator / Demo Walkthrough
+## Demo Walkthrough
 
-Judges and evaluators testing outside Indian trading hours (9:15 AM to 3:30 PM IST) can test all real-time features using the built-in simulator:
+Users testing outside Indian trading hours (9:15 AM to 3:30 PM IST) can test all real-time features using the built-in simulator:
 
 1. **Verify AI Briefing:**
    * Check the **"Since You Checked"** card at the top.
