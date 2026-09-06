@@ -6,9 +6,12 @@ WORKDIR /app
 # Prevent Python from writing .pyc files and buffer stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV TZ=Asia/Kolkata
 
-# Install curl for container health checks
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+# Install curl for container health checks and tzdata for Indian Standard Time (IST)
+RUN apt-get update && apt-get install -y --no-install-recommends curl tzdata && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy dependency definitions first for Docker layer caching
 COPY pyproject.toml README.md ./

@@ -129,7 +129,29 @@ class AnomalyDetector:
         decouple_component = min(10.0, rel_strength * 3.0) if rel_strength > 0 else 0.0
 
         raw_score = int(vol_component + rvol_component + circuit_component + decouple_component)
-        urgency_score = min(100, max(0, raw_score))
+
+        # Non-linear risk escalation floor:
+        # In financial surveillance and risk management, a tier-1 hazard (circuit freeze risk
+        # or institutional volume surge) must elevate urgency, rather than being diluted by inactive metrics.
+        escalation_floor = 0
+        if ticker.is_near_upper_circuit(1.0) or ticker.is_near_lower_circuit(1.0):
+            # Imminent circuit halt: critical liquidity risk
+            is_ultra_close = ticker.upper_circuit_distance_pct <= 0.5 or ticker.lower_circuit_distance_pct <= 0.5
+            escalation_floor = max(escalation_floor, 88 if is_ultra_close else 78)
+        if rvol >= 3.0:
+            # Massive institutional block turnover / volume anomaly
+            escalation_floor = max(escalation_floor, 75)
+        elif rvol >= 2.5:
+            escalation_floor = max(escalation_floor, 65)
+        if ticker.current_price >= ticker.week_52_high or ticker.is_near_52w_high(0.5):
+            # Resistance breakout
+            escalation_floor = max(escalation_floor, 70)
+        if z_vol >= 2.5:
+            escalation_floor = max(escalation_floor, 75)
+        elif z_vol >= 2.0:
+            escalation_floor = max(escalation_floor, 68)
+
+        urgency_score = min(100, max(raw_score, escalation_floor))
 
         # Determine primary human driver
         if signals:
