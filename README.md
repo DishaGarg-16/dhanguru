@@ -2,7 +2,7 @@
 ### Autonomous Market Watchlist & Delta Intelligence Co-Pilot for Indian Equities (NSE/BSE)
 
 > *Transforming noisy, passive ticker grids into an active, responsible market intelligence co-pilot.*
-
+Try it live here! https://dhanguru.onrender.com/
 ---
 
 ## Executive Summary
@@ -63,7 +63,8 @@ All quantitative math is computed **100% deterministically in Python** before re
 - **Volatility Breakouts (`Z_vol`):** Measured against rolling 14-day Average True Range (ATR).
 - **Relative Volume (`RVol`):** Measured against authentic 20-day time-of-day volume curves.
 - **Circuit Limit Warnings:** Live proximity meters for NSE 5%, 10%, and 20% price bands.
-- **Composite Urgency Score (0–100):** Weighted multi-factor attention score sorting your watchlist by significance rather than alphabetical order.
+- **Non-Linear Risk Escalation Floor:** Eliminates the linear averaging trap where single-factor catastrophic events get diluted by inactive metrics. Circuit proximity breaches (<0.5% to halt) enforce a non-linear risk floor of **88/100 (CRITICAL)**, extreme volume surges (>= 3.0x RVol) enforce **75/100 (ATTENTION)**, and 52-week breakouts enforce **70/100 (ATTENTION)**, while normal intraday drift stays calm at **10–35/100 (CALM)**.
+- **Composite Urgency Score (0–100):** Multi-factor attention score dynamically sorting your watchlist by urgency rather than passive alphabetical order.
 
 ### 3. Time-Travel Scrubber
 Evaluate deltas across custom time horizons:
@@ -84,9 +85,14 @@ Financial applications cannot blindly pipe customer watchlists to external US cl
 - **On-the-Fly Stream Ingestion:** Dynamically registers newly added symbols directly into the background market stream and ring-buffer store without requiring a server reboot or pipeline interruption.
 
 ### 6. Production Hardening & Adversarial Protection
+- **In-Memory IP Rate Limiter Middleware:** FastAPI middleware enforcing a sliding-window ceiling of 120 requests/minute per IP across all `/api/*` endpoints. Reads `X-Forwarded-For` from cloud edge proxies and halts DoS bots with standard HTTP 429 `Too Many Requests`.
+- **Acknowledge Debounce & Cooldown Guard:** 5-second in-memory cooldown on `POST /api/watchlist/acknowledge`. Rejects rapid disk I/O rewrites (`self._save()`), eliminating event-loop starvation and preventing bots from wiping out user delta checkpoints.
+- **AI Briefing TTL Cache (20s):** In-memory 20-second cache on executive briefings. Protects Google Gemini free-tier rate limits (15 RPM) from concurrent visitor bursts; subsequent requests return in under 2ms.
+- **Simulation Cooldown:** 3-second throttle on `/api/market/simulate/trigger` to prevent automated script loops from flooding WebSocket client buffers.
 - **Input Sanitization:** Strict regex enforcement (`^[A-Za-z0-9&._-]+$`) on all equity symbols and URL parameter encoding to mitigate injection risks.
 - **Watchlist Capacity Ceiling:** Hard cap at 100 symbols per watchlist to preserve deterministic 60fps rendering and memory boundaries.
-- **Human-Speed Bot Throttling:** Sliding-window rate limiting restricting additions to 20 operations per 60 seconds per IP, protecting backend data pipelines against automated script flooding while keeping human exploration frictionless.
+- **Human-Speed Bot Throttling:** Sliding-window rate limiting restricting symbol additions to 20 operations per 60 seconds per IP, protecting backend data pipelines against automated script flooding while keeping human exploration frictionless.
+
 
 ---
 
