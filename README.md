@@ -1,197 +1,174 @@
 # DHANGURU (धनगुरु)
-### Autonomous Market Watchlist & Delta Intelligence Co-Pilot for Indian Equities (NSE/BSE)
+### Autonomous Watchlist & Market Intelligence Co-Pilot for Indian Equities (NSE/BSE)
 
-> *Transforming noisy, passive ticker grids into an active, responsible market intelligence co-pilot.*
-Try it live here! https://dhanguru.onrender.com/
----
+> Transforming noisy, passive ticker grids into an active, responsible market intelligence co-pilot.
 
-## Executive Summary
-
-Traditional broker watchlists are passive, noisy ticker grids. They flash green and red numbers every second, inducing retail **FOMO** (Fear Of Missing Out), anxiety, and impulsive trading. When retail investors open their trading apps after being away, they have no easy way of knowing:
-- *What meaningfully changed while I was away?*
-- *Is this sudden +4% move backed by institutional volume or just low-liquidity noise?*
-- *Is this stock dangerously close to an upper circuit limit where buying could trap my capital?*
-
-**Dhanguru** solves this by replacing passive ticker observation with **Autonomous Delta Intelligence**. It computes statistical anomalies (14-day ATR volatility bands, Relative Volume surges, NSE circuit limit proximity) between when you last checked and right now, delivering a crisp, human **"Since You Checked" Executive Briefing** powered by local, private AI.
+**Live Demo:** https://dhanguru.onrender.com/
 
 ---
 
-## System Architecture
+## WHY (The Problem & Philosophy)
 
-```mermaid
-graph TD
-    A[NSE Market Stream / High-Fidelity Simulator] -->|Live Ticks| B[Central Ticker Store & Ring-Buffer History]
-    B -->|WebSocket /ws/live| C[React Dark Obsidian Dashboard]
-    
-    B --> D[Statistical Anomaly & Delta Engine]
-    D -->|14-day ATR Z-Score| E[Anomaly Detector]
-    D -->|Relative Volume RVol| E
-    D -->|NSE Circuit Band Proximity 5%/10%/20%| E
-    D -->|NIFTY 50 Decoupling| E
-    
-    E --> F[0-100 Urgency Scoring & Outlier Filter]
-    F -->|Dynamic Row Sorting & Outlier Filter| C
-    F -->|Ranks Top Attention Anomalies| H[Checkpoint Diff Engine]
-    
-    G[User Session Checkpoint T_last_seen] --> H
-    B --> H
-    H --> I[Watchlist Delta Report]
-    
-    I --> J{Hybrid AI Intelligence Layer}
-    J -->|Local Ollama / 100% Offline| K[llama3.2 / qwen2.5]
-    J -->|Cloud Serverless / Sub-300ms| L[Google Gemini / Groq / OpenAI]
-    J -->|Network Blip / Timeout Fallback| M[Deterministic Rule Engine]
-    
-    K --> N[Since You Checked Executive Briefing]
-    L --> N
-    M --> N
-    N --> C
-```
+### The Problem
+Standard trading screens present a wall of 50 numbers flashing green and red every second. Retail investors suffer from cognitive overload, trying to mentally calculate percentage changes, volume spikes, and circuit band limits across dozens of stocks simultaneously. By the time an investor spots an abnormal movement, the trade has often already passed or the stock has hit an exchange freeze.
+
+### The Philosophy
+Market data should not just be displayed; it should be interpreted. Investors should not have to spend hours decoding complex charts just to answer one simple question:
+
+> *"Which stock on my list demands my immediate attention right now, and why?"*
+
+DhanGuru was built to act as an air-traffic controller for your watchlist, filtering out market noise and highlighting high-impact events automatically.
 
 ---
 
-## Key Features & Product Highlights
+## WHAT (The Solution & Core Features)
 
-### 1. "Since You Checked" Executive Briefing
-- When you open the dashboard after being away (e.g., away for 35m or 3h), Dhanguru compares `T_last_seen` against `T_now`.
-- Generates a **crisp 1-sentence macro headline**, assigns market mood (`BULLISH`, `BEARISH`, `VOLATILE`, `CALM`), and provides 2–3 institutional bullet points.
-- **FOMO Guard & Capital Protection:** Proactively alerts users if a stock is within 1% of its upper circuit band, advising against chasing illiquid extensions.
-- **1-Click Acknowledge:** Mark all caught up in `< 50ms` to reset your session checkpoint.
+DhanGuru is a real-time, intelligent watchlist co-pilot tailored specifically for Indian equities (NSE/BSE). It continuously monitors price velocity, volume deviations, and volatility to elevate critical movements and explain them in plain English.
 
-### 2. Quantitative Anomaly Detection (No Hallucinations)
-All quantitative math is computed **100% deterministically in Python** before reaching the LLM:
-- **Volatility Breakouts (`Z_vol`):** Measured against rolling 14-day Average True Range (ATR).
-- **Relative Volume (`RVol`):** Measured against authentic 20-day time-of-day volume curves.
-- **Circuit Limit Warnings:** Live proximity meters for NSE 5%, 10%, and 20% price bands.
-- **Non-Linear Risk Escalation Floor:** Eliminates the linear averaging trap where single-factor catastrophic events get diluted by inactive metrics. Circuit proximity breaches (<0.5% to halt) enforce a non-linear risk floor of **88/100 (CRITICAL)**, extreme volume surges (>= 3.0x RVol) enforce **75/100 (ATTENTION)**, and 52-week breakouts enforce **70/100 (ATTENTION)**, while normal intraday drift stays calm at **10–35/100 (CALM)**.
-- **Composite Urgency Score (0–100):** Multi-factor attention score dynamically sorting your watchlist by urgency rather than passive alphabetical order.
+* **Dynamic Urgency-Ranked Watchlist:** Unlike traditional static watchlists, cards automatically re-rank themselves in real time based on an algorithmic urgency score. Stocks approaching circuit limits or experiencing sudden volume surges bubble straight to the top.
+* **"While You Were Away" AI Briefings:** An on-demand AI co-pilot synthesizes multi-stock changes into a clear executive summary, giving users an instant narrative of market context without financial jargon.
+* **Circuit Breaker Radar:** Visual proximity indicators show exactly how close a stock is to its exchange-mandated upper or lower circuit limit (such as 5%, 10%, or 20% price bands), helping traders manage liquidity risk before getting trapped.
+* **On-the-Fly Stock Search & Sector Filters:** Users can look up and add any NSE equity on demand, or filter their view across eight major sector baskets (Banking, IT, Auto, Pharma, Energy, FMCG, Metals, Real Estate).
+* **FOMO Guard (Capital Protection):** Contextual warnings alert users when a stock is spiking on low volume or is pinned against a circuit band, advising against emotional chasing.
 
-### 3. Time-Travel Scrubber
-Evaluate deltas across custom time horizons:
-- **Since Last Visit** (dynamic checkpoint based on user's actual absence)
-- **Past 15m** (intraday impulse detection)
-- **Past 1h** (mid-session structural changes)
-- **Past 3h** (full-session macro perspective)
-
-### 4. Enterprise-Ready Hybrid AI Layer (DPDP & SEBI Compliant)
-Financial applications cannot blindly pipe customer watchlists to external US cloud APIs. Dhanguru supports a multi-tier provider model:
-- **Local Ollama (`llama3.2` / `qwen2.5`):** 100% offline, zero API cost, zero customer data leaves the machine (SEBI/DPDP data residency compliant).
-- **Cloud APIs (Groq / Gemini / OpenAI):** Optional sub-300ms serverless inference.
-- **Deterministic Rule Engine Fallback:** 0ms instantaneous briefing generator guaranteeing **100% financial SLA uptime** even during network outages.
-
-### 5. Dynamic Stock Discovery & Sectoral Navigation
-- **8 Curated Sector Filters:** Browse stocks across `NIFTY 50`, `Automobile`, `Banking & Finance`, `Information Technology`, `FMCG & Retail`, `Energy & Metals`, `Pharma & Healthcare`, and `Consumer Internet`.
-- **Live Typeahead Search:** 250ms debounced search query across 2,000+ Indian equities (NSE/BSE) with company names and live exchange resolution.
-- **On-the-Fly Stream Ingestion:** Dynamically registers newly added symbols directly into the background market stream and ring-buffer store without requiring a server reboot or pipeline interruption.
-
-### 6. Production Hardening & Adversarial Protection
-- **In-Memory IP Rate Limiter Middleware:** FastAPI middleware enforcing a sliding-window ceiling of 120 requests/minute per IP across all `/api/*` endpoints. Reads `X-Forwarded-For` from cloud edge proxies and halts DoS bots with standard HTTP 429 `Too Many Requests`.
-- **Acknowledge Debounce & Cooldown Guard:** 5-second in-memory cooldown on `POST /api/watchlist/acknowledge`. Rejects rapid disk I/O rewrites (`self._save()`), eliminating event-loop starvation and preventing bots from wiping out user delta checkpoints.
-- **AI Briefing TTL Cache (20s):** In-memory 20-second cache on executive briefings. Protects Google Gemini free-tier rate limits (15 RPM) from concurrent visitor bursts; subsequent requests return in under 2ms.
-- **Simulation Cooldown:** 3-second throttle on `/api/market/simulate/trigger` to prevent automated script loops from flooding WebSocket client buffers.
-- **Input Sanitization:** Strict regex enforcement (`^[A-Za-z0-9&._-]+$`) on all equity symbols and URL parameter encoding to mitigate injection risks.
-- **Watchlist Capacity Ceiling:** Hard cap at 100 symbols per watchlist to preserve deterministic 60fps rendering and memory boundaries.
-- **Human-Speed Bot Throttling:** Sliding-window rate limiting restricting symbol additions to 20 operations per 60 seconds per IP, protecting backend data pipelines against automated script flooding while keeping human exploration frictionless.
-
+### Top Highlights
+* **Zero-cost and self-hostable:** Supports 100% offline local AI via Ollama, as well as cloud models like Gemini and Groq.
+* **Purpose-built for Indian market structure:** Full support for NSE/BSE trading sessions, circuit bands, and Nifty 50 benchmarking.
+* **Production-ready:** Packaged into a single lightweight container with rate limiting and 38 passing automated tests.
 
 ---
 
-## Quickstart Guide
+## HOW (Architecture, Engineering Smartness & Trade-offs)
 
-### Prerequisites
-- Python 3.11+
-- [uv](https://docs.astral.sh/uv/) (recommended) or `pip`
-- Node.js 18+ & `npm`
-- [Ollama](https://ollama.com/) (Optional, for 100% offline local AI)
+### 1. Architectural Design
 
-### Option A: 1-Command Startup with Docker (Recommended)
+* **Hybrid Market Feed:** DhanGuru recognizes Indian market hours (09:15 to 15:30 IST, Monday to Friday). During active market hours, it streams live exchange data. Outside market hours and on weekends, it automatically switches to a session replay simulator, ensuring the platform remains dynamic and testable around the clock.
+* **In-Memory Central Store:** Ticks and rolling historical windows are managed in an in-memory store. Anomaly detection runs in microseconds without the latency of relational database queries.
+* **Event-Driven WebSocket Broadcasts:** The backend pushes updates to the browser only when meaningful changes occur, avoiding client-side polling and reducing network overhead.
+* **Flexible Multi-Tier AI Layer:** Connects to local LLMs (Ollama) for complete data privacy, cloud LLMs (Gemini, Groq) for rapid processing, or a deterministic fallback rule engine if no model is reachable.
+
+### 2. Deliberate Trade-offs
+
+* **In-Memory Buffers vs Heavy Database:** We selected an in-memory rolling buffer instead of writing every tick to a persistent database.
+  * *Trade-off:* We do not store multi-year tick archives, but we achieve sub-millisecond anomaly evaluation and zero database write-locks during high-volume market bursts.
+* **Algorithmic Rules for Alerts vs LLMs for Every Tick:** We use deterministic mathematical formulas to detect volume spikes and circuit proximity, reserving generative AI strictly for high-level summaries when requested by the user.
+  * *Trade-off:* Running an LLM on every incoming tick is cost-prohibitive, slow, and prone to hallucinations. Mathematical filters ensure instant, accurate alerts while keeping computing costs at zero.
+* **Intelligent Hybrid Feed vs Expensive Institutional Feeds:** Institutional exchange feeds cost thousands of dollars a month. We engineered a combination of resilient polling, client-side interpolation, and weekend simulation replay.
+  * *Trade-off:* Delivers an institutional-grade live experience for retail users and evaluators without incurring recurring enterprise data bills.
+
+---
+
+## EDGE CASES (And How They Are Handled)
+
+### 1. AI & LLM Resilience
+* **Missing API Key, Offline Local LLM, or Network Downtime:** Built-in `RuleEngineBriefingFallback` deterministically synthesizes human-readable market briefings from quantitative price, volume, and benchmark numbers whenever Gemini or Ollama is unavailable or unconfigured. This guarantees 100% uptime with zero UI crashes.
+* **LLM Formatting & Parsing Errors (JSON Validation):** Employs a flat Pydantic schema (`AIBriefingOutput`) and native grammar-constrained decoding (`format="json"` in Ollama). If an LLM emits markdown fences, truncated output, or malformed JSON, the exception is caught and gracefully redirected to the rule fallback.
+* **AI Rate-Limit & Token Quota Exhaustion (Gemini 15 RPM Free Tier):** An in-memory 20-second TTL cache (`_briefing_cache`) intercepts rapid page refreshes and multi-tab opens, returning cached briefings instantly without consuming API quota.
+
+### 2. Real-Time Streaming & WebSockets
+* **Client Network Dropouts & Disconnections:** The frontend custom hook (`useMarketStream.js`) automatically detects disconnections and attempts reconnection using a 3-second backoff loop. On the backend, `WebSocketDisconnect` cleanly removes inactive socket handles from `ConnectionManager` to prevent memory leaks or broken pipe exceptions.
+* **Simulation Flooding & WebSocket Buffer Saturation:** Added a server-side 3-second cooldown on `/api/stream/simulate-anomaly` to block repeated user clicks, protecting background event queues and client-side message buffers from lag.
+
+### 3. Market Data & Calculation Math
+* **Division by Zero & Missing Historical Ticks:** Mathematical guards check that volatility baselines are greater than zero before calculating volatility ratios and check that past prices are positive before calculating percentage changes. Missing ticks fall back to previous close baselines to prevent application runtime errors.
+* **Empty Watchlist Scenario:** The diff engine detects when zero symbols are tracked and produces an onboarding state with actionable instructions to add stocks, skipping unnecessary LLM inferences.
+* **Circuit Limit Proximity & Risk Escalation:** The anomaly engine dynamically monitors daily volatility bands, relative volume, and circuit proximity (within 1% of the upper or lower price band). If breached, it elevates the stock to CRITICAL urgency and injects FOMO Guard risk warnings.
+
+### 4. Storage & State Persistence
+* **Session Acknowledgement Spam & Concurrent Disk Writes:** The `WatchlistStore` enforces a 5-second debounce window on `acknowledge_session()`. Rapid clicks or automated requests update in-memory timestamps without thrashing disk I/O on `.watchlist_data.json`.
+* **Corrupted or Missing Watchlist File:** The store wraps JSON file reads in safe try/except blocks. If the storage file is missing, empty, or corrupted, it automatically re-seeds with a default portfolio of major Indian equities (ZOMATO, TRENT, TATAMOTORS, RELIANCE, HDFCBANK, INFY, ITC) dated two hours in the past for instant demo data.
+
+### 5. Security, DoS & Deployment Routing
+* **API Flooding & DoS Attacks:** Built-in `InMemoryRateLimiterMiddleware` enforces a strict 120 req/min sliding window per client IP. Malicious bursts receive an immediate HTTP 429 Too Many Requests response, while streaming WebSockets (`/ws/`), health checks (`/health`), and static assets are exempt for speed.
+* **Single-Page Application (SPA) 404s on Refresh:** The production Docker container serves both backend and frontend from a single port. FastAPI includes an SPA fallback handler that serves `dist/index.html` for browser route refreshes (such as `/watchlist` or `/analytics`), while correctly preserving 404 errors for invalid `/api/*` endpoints.
+* **Dynamic Host Port Assignment (Railway / Render):** The unified container uses dynamic shell evaluation (`--port ${PORT:-8000}`) to bind automatically to any port assigned by cloud platforms without port conflict errors.
+
+---
+
+## Instructions to Run
+
+### Option 1: Docker (Single Container, Production Ready)
 
 ```powershell
-docker compose up --build
+docker build -t dhanguru .
+docker run -p 8000:8000 dhanguru
 ```
-*Frontend runs on `http://localhost:3000` with Nginx reverse proxying to backend on `http://localhost:8000`.*
+Open `http://localhost:8000` in your browser.
 
 ---
 
-### Option B: Local Development Setup
+### Option 2: Local Development Setup
 
-#### 1. Clone & Configure
+#### Step 1: Clone the repository
 ```bash
 git clone https://github.com/DishaGarg-16/dhanguru.git
 cd dhanguru
-copy .env.example .env
 ```
 
-#### 2. Start Backend (FastAPI + WebSockets)
+#### Step 2: Configure Environment Variables
+```bash
+copy .env.example .env
+```
+*(Optional: Add your `GEMINI_API_KEY` in `.env` if you wish to use Google Gemini. If omitted, DhanGuru automatically falls back to local Ollama or the built-in deterministic rule engine).*
+
+#### Step 3: Start the Backend (FastAPI + WebSockets)
 ```powershell
 uv sync
 uv run uvicorn backend.app.main:app --reload
 ```
-*Backend runs on `http://127.0.0.1:8000`.*
+The backend API and WebSocket stream will run on `http://127.0.0.1:8000`.
 
-#### 3. Start Frontend (React + Vite)
-In a second terminal:
+#### Step 4: Start the Frontend (React + Vite)
+In a separate terminal window:
 ```powershell
 cd frontend
 npm install
 npm run dev
 ```
-*Frontend runs on `http://localhost:5173`.*
+Open `http://localhost:5173` in your browser.
 
-#### 4. Run Automated Test Suite
-Verify all statistical math, streaming WebSockets, catalog search, and security bounds:
-```powershell
-uv run pytest backend/tests/
+#### Step 5: (Optional) Run Offline Local AI with Ollama
+If you want completely free, 100% private offline AI briefings:
+```bash
+ollama run llama3.2
 ```
-*(Executes 38 passing unit and integration tests across analytics, briefing, catalog, live data, schedule, and stream).*
 
 ---
 
-## Evaluator / Judge Demo Walkthrough
+## Evaluator / Demo Walkthrough
 
-Judges evaluating outside trading hours (9:15 AM – 3:30 PM IST) can test all real-time systems using the built-in **NSE Session Replay Stream**:
+Judges and evaluators testing outside Indian trading hours (9:15 AM to 3:30 PM IST) can test all real-time features using the built-in simulator:
 
 1. **Verify AI Briefing:**
-   - Look at the **"Since You Checked"** card.
-   - Notice the green **`AI Co-Pilot`** badge and macro summary generated by local Ollama (`llama3.2`).
+   * Check the **"Since You Checked"** card at the top.
+   * Notice the macro summary and key takeaways generated by the AI co-pilot (or rule fallback).
 2. **Trigger Simulated Anomalies:**
-   - Click the **"Simulate Anomaly"** dropdown in the top header.
-   - Click **`Push TRENT to Upper Circuit`** -> Notice the circuit limit meter glow orange/red, the urgency score jump to `90+`, and the Capital Protection Notice appear.
-   - Click **`Surge ZOMATO (3.4x volume)`** -> Notice the Relative Volume badge jump to `3.4x RVol` with volume breakout tags.
-3. **Time-Travel Scrubbing:**
-   - Click **`Past 15m`**, **`Past 1h`**, or **`Past 3h`** on the delta bar to see the briefing dynamically re-evaluate past time windows.
+   * Click the **"Simulate Anomaly"** dropdown in the top navigation bar.
+   * Click **"Push TRENT to Upper Circuit"**: Notice the circuit limit meter glow, the urgency score jump into the CRITICAL tier (elevated to 78 or 88 based on proximity), and the Capital Protection Notice appear.
+   * Click **"Surge ZOMATO (3.4x volume)"**: Notice the Relative Volume badge jump to 3.4x with volume surge tags.
+3. **Test Time-Travel Scrubbing:**
+   * Click **"Past 15m"**, **"Past 1h"**, or **"Past 3h"** on the delta bar to see the briefing dynamically re-evaluate past time windows.
 4. **1-Click Checkpoint Acknowledge:**
-   - Click **`Acknowledge & Mark All Caught Up`**.
-   - Notice the timer instantly reset to `0s` (`All caught up. Monitoring in real time`) in under 50ms.
-5. **Dynamic Stock Discovery & Sector Navigation:**
-   - Click **`+ Add Stock`** to open the discovery modal.
-   - Click sectoral chips like **`Automobile`**, **`Banking & Finance`**, or **`IT & Tech`** to explore curated stocks.
-   - Type in the search box (e.g., `mahi` or `zom`) to see real-time typeahead suggestions across 2,000+ Indian equities.
-   - Click **`+ Add`** on any stock to observe it instantly register into the live ticker stream and ring-buffer store without restarting the backend.
+   * Click **"Acknowledge & Mark All Caught Up"**.
+   * Notice the timer immediately reset to `0s` ("All caught up. Monitoring in real time").
+5. **Dynamic Stock Discovery & Sector Filters:**
+   * Click **"+ Add Stock"** to open the discovery modal.
+   * Click sector chips like **"Automobile"**, **"Banking & Finance"**, or **"IT & Tech"** to browse curated equities.
+   * Type in the search box (e.g. `zom` or `tata`) to see live search suggestions across 2,000+ Indian equities.
+   * Click **"+ Add"** on any stock to observe it register directly into the live ticker stream without restarting the server.
 
 ---
 
-## Responsible Investing / FOMO Guard
-
-Retail investor empowerment, discipline, and capital protection are core to Dhanguru:
-- **Anti-Chasing Alerts:** When a stock has spiked +5% on low Relative Volume (`< 0.8x`), Dhanguru flags it as *illiquid price extension* rather than a genuine breakout.
-- **Circuit Liquidity Warnings:** If a stock is within 0.5% of its upper circuit band, Dhanguru warns the user that liquidity and order execution constraints may trap exit capital.
-
----
-
-## Tech Stack
+## Tech Stack Summary
 
 | Layer | Technologies |
 | :--- | :--- |
 | **Backend** | Python 3.12, FastAPI, Uvicorn, WebSockets, Pydantic v2 |
-| **Data Engine** | NumPy (rolling ATR & Z-scores), Ring-Buffer History |
-| **AI Layer** | Pydantic AI, Local Ollama (`llama3.2` / `qwen2.5`), Cloud Groq / Gemini |
+| **Data Engine** | In-memory rolling store, statistical volatility & volume baselines |
+| **AI Layer** | Local Ollama (`llama3.2`), Cloud Gemini / Groq, Deterministic Rule Fallback |
 | **Frontend** | React 18, Vite, Obsidian Dark Glassmorphism, Lucide Icons |
-| **Styling** | Pure Vanilla CSS Design System (`#0B0E14` obsidian, `#00D09C` emerald) |
-| **Containerization** | Docker, Docker Compose, Multi-stage Nginx Reverse Proxy |
-| **Quality & Tests** | Pytest (38 passing unit & integration tests), Starlette TestClient |
+| **Styling** | Pure Vanilla CSS Design System |
+| **Containerization** | Unified Multi-stage Dockerfile (Node build + FastAPI serve) |
+| **Quality & Tests** | Pytest (38 passing unit & integration tests) |
 
----
 
-## License
-MIT License.

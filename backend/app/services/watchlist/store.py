@@ -78,7 +78,7 @@ class WatchlistStore:
                 user_id=user_id,
                 name="Primary Watchlist",
                 symbols=DEFAULT_SYMBOLS.copy(),
-                last_seen_at=datetime.now() - timedelta(hours=2),
+                last_seen_at=datetime.now() - timedelta(hours=2, minutes=15),
                 updated_at=datetime.now(),
             )
             self._save()

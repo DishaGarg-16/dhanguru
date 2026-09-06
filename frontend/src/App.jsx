@@ -7,8 +7,10 @@ import { WatchlistTable } from './components/WatchlistTable';
 import { AddSymbolModal } from './components/AddSymbolModal';
 import { AssetDetailDrawer } from './components/AssetDetailDrawer';
 import { Zap, Sparkles, ChevronDown } from 'lucide-react';
+import { getGuestUserId } from './utils/session';
 
 export default function App() {
+  const guestUserId = getGuestUserId();
   const [watchlistData, setWatchlistData] = useState(null);
   const [briefing, setBriefing] = useState(null);
   const [briefingLoading, setBriefingLoading] = useState(false);
@@ -20,10 +22,10 @@ export default function App() {
   const [acknowledging, setAcknowledging] = useState(false);
   const [showDemoMenu, setShowDemoMenu] = useState(false);
 
-  // Fetch Watchlist via REST
+  // Fetch Watchlist via REST (isolated per guest session)
   const fetchWatchlist = useCallback(async () => {
     try {
-      const res = await fetch('/api/watchlist');
+      const res = await fetch(`/api/watchlist?user_id=${encodeURIComponent(guestUserId)}`);
       if (res.ok) {
         const data = await res.json();
         setWatchlistData(data);
@@ -31,16 +33,16 @@ export default function App() {
     } catch (err) {
       console.error('Failed to fetch watchlist:', err);
     }
-  }, []);
+  }, [guestUserId]);
 
-  // Fetch Executive Briefing via REST
+  // Fetch Executive Briefing via REST (isolated per guest session)
   const fetchBriefing = useCallback(async (windowId = selectedWindow) => {
     setBriefingLoading(true);
     try {
-      let url = '/api/briefing/since-last';
-      if (windowId === '15m') url = '/api/briefing/window?minutes_ago=15';
-      else if (windowId === '1h') url = '/api/briefing/window?minutes_ago=60';
-      else if (windowId === '3h') url = '/api/briefing/window?minutes_ago=180';
+      let url = `/api/briefing/since-last?user_id=${encodeURIComponent(guestUserId)}`;
+      if (windowId === '15m') url = `/api/briefing/window?minutes_ago=15&user_id=${encodeURIComponent(guestUserId)}`;
+      else if (windowId === '1h') url = `/api/briefing/window?minutes_ago=60&user_id=${encodeURIComponent(guestUserId)}`;
+      else if (windowId === '3h') url = `/api/briefing/window?minutes_ago=180&user_id=${encodeURIComponent(guestUserId)}`;
 
       const res = await fetch(url);
       if (res.ok) {
@@ -52,7 +54,7 @@ export default function App() {
     } finally {
       setBriefingLoading(false);
     }
-  }, [selectedWindow]);
+  }, [selectedWindow, guestUserId]);
 
   // Live WebSocket Tick Handler (Phase 6 Real-Time Engine)
   const handleLiveTick = useCallback((eventData) => {
@@ -112,11 +114,11 @@ export default function App() {
     fetchBriefing(winId);
   };
 
-  // Handle 1-Click Acknowledge
+  // Handle 1-Click Acknowledge (isolated per guest session)
   const handleAcknowledge = async () => {
     setAcknowledging(true);
     try {
-      const res = await fetch('/api/watchlist/acknowledge', { method: 'POST' });
+      const res = await fetch(`/api/watchlist/acknowledge?user_id=${encodeURIComponent(guestUserId)}`, { method: 'POST' });
       if (res.ok) {
         setAcknowledging(false);
         // Optimistically set to 0s away so user sees instant feedback in <50ms
@@ -140,10 +142,10 @@ export default function App() {
     }
   };
 
-  // Handle Add Symbol
+  // Handle Add Symbol (isolated per guest session)
   const handleAddSymbol = async (symbol) => {
     try {
-      const res = await fetch('/api/watchlist/symbols', {
+      const res = await fetch(`/api/watchlist/symbols?user_id=${encodeURIComponent(guestUserId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol }),
@@ -158,10 +160,10 @@ export default function App() {
     }
   };
 
-  // Handle Remove Symbol
+  // Handle Remove Symbol (isolated per guest session)
   const handleRemoveStock = async (symbol) => {
     try {
-      const res = await fetch(`/api/watchlist/symbols/${symbol}`, { method: 'DELETE' });
+      const res = await fetch(`/api/watchlist/symbols/${encodeURIComponent(symbol)}?user_id=${encodeURIComponent(guestUserId)}`, { method: 'DELETE' });
       if (res.ok) {
         await fetchWatchlist();
         await fetchBriefing();
