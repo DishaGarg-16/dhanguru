@@ -170,5 +170,3 @@ Judges and evaluators testing outside Indian trading hours (9:15 AM to 3:30 PM I
 | **Styling** | Pure Vanilla CSS Design System |
 | **Containerization** | Unified Multi-stage Dockerfile (Node build + FastAPI serve) |
 | **Quality & Tests** | Pytest (38 passing unit & integration tests) |
-
-
