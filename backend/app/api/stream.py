@@ -6,6 +6,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from backend.app.models.ticker import TickerSnapshot
 from backend.app.services.market_data.store import central_store
 from backend.app.services.market_data.simulator import IndianMarketSimulator
+from backend.app.services.watchlist.store import watchlist_store
 
 router = APIRouter(tags=["streaming"])
 
@@ -84,6 +85,15 @@ class ConnectionManager:
         for dead in dead_connections:
             self.disconnect(dead)
 
+    async def broadcast_user_stats(self):
+        active_count = max(1, len(self.active_connections))
+        lifetime_count = watchlist_store.get_lifetime_users_count()
+        await self.broadcast({
+            "type": "USER_STATS",
+            "active_users": active_count,
+            "lifetime_users": lifetime_count,
+        })
+
 
 stream_manager = ConnectionManager()
 
@@ -98,6 +108,9 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         # Send initial snapshot upon connection
         bench = central_store.get_benchmark()
+        active_cnt = max(1, len(stream_manager.active_connections))
+        lifetime_cnt = watchlist_store.get_lifetime_users_count()
+
         initial_data = {
             "type": "INITIAL_SNAPSHOT",
             "session": get_market_session_status(),
@@ -106,16 +119,32 @@ async def websocket_endpoint(websocket: WebSocket):
                 sym: t.model_dump(mode="json")
                 for sym, t in central_store.get_all_latest().items()
             },
+            "active_users": active_cnt,
+            "lifetime_users": lifetime_cnt,
         }
         await websocket.send_text(json.dumps(initial_data, default=str))
+
+        # Notify all connected peers of updated active users count
+        await stream_manager.broadcast_user_stats()
 
         # Keep connection open for client heartbeats or messages
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
         stream_manager.disconnect(websocket)
+        await stream_manager.broadcast_user_stats()
     except Exception:
         stream_manager.disconnect(websocket)
+        await stream_manager.broadcast_user_stats()
+
+
+@router.get("/api/market/stats")
+async def get_market_stats():
+    """Get real-time active users and cumulative lifetime users count"""
+    return {
+        "active_users": max(1, len(stream_manager.active_connections)),
+        "lifetime_users": watchlist_store.get_lifetime_users_count(),
+    }
 
 
 @router.get("/api/market/session")

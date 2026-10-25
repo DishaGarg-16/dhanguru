@@ -100,7 +100,7 @@ export default function App() {
   }, []);
 
   // Connect WebSocket stream
-  const { connectionStatus, marketSession, lastTickTime } = useMarketStream(handleLiveTick);
+  const { connectionStatus, marketSession, lastTickTime, activeUsers, lifetimeUsers } = useMarketStream(handleLiveTick);
 
   // Initial Load
   useEffect(() => {
@@ -401,6 +401,16 @@ export default function App() {
         stock={selectedStock}
         onClose={() => setSelectedStock(null)}
       />
+
+      {/* Live Active & Lifetime Investors Footer */}
+      <footer className="app-footer">
+        <div className="user-stats-pill">
+          <span className="user-stats-dot">🟢</span>
+          <span className="font-mono user-stats-active">{activeUsers} Active Now</span>
+          <span className="user-stats-divider">•</span>
+          <span className="user-stats-lifetime">{lifetimeUsers} {lifetimeUsers === 1 ? 'Total Lifetime Investor' : 'Total Lifetime Investors'}</span>
+        </div>
+      </footer>
     </div>
   );
 }

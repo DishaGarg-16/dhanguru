@@ -4,6 +4,8 @@ export function useMarketStream(onTickReceived) {
   const [connectionStatus, setConnectionStatus] = useState('CONNECTING');
   const [marketSession, setMarketSession] = useState(null);
   const [lastTickTime, setLastTickTime] = useState(null);
+  const [activeUsers, setActiveUsers] = useState(1);
+  const [lifetimeUsers, setLifetimeUsers] = useState(1);
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
 
@@ -27,6 +29,11 @@ export function useMarketStream(onTickReceived) {
 
           if (data.type === 'INITIAL_SNAPSHOT') {
             if (data.session) setMarketSession(data.session);
+            if (data.active_users !== undefined) setActiveUsers(data.active_users);
+            if (data.lifetime_users !== undefined) setLifetimeUsers(data.lifetime_users);
+          } else if (data.type === 'USER_STATS') {
+            if (data.active_users !== undefined) setActiveUsers(data.active_users);
+            if (data.lifetime_users !== undefined) setLifetimeUsers(data.lifetime_users);
           } else if (data.type === 'TICK_UPDATE') {
             if (onTickReceived) {
               onTickReceived(data);
@@ -57,10 +64,19 @@ export function useMarketStream(onTickReceived) {
   }, [onTickReceived]);
 
   useEffect(() => {
-    // Fetch initial market session info via REST as well
+    // Fetch initial market session info via REST
     fetch('/api/market/session')
       .then((res) => res.json())
       .then((data) => setMarketSession(data))
+      .catch(() => {});
+
+    // Fetch initial user count stats via REST
+    fetch('/api/market/stats')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.active_users !== undefined) setActiveUsers(data.active_users);
+        if (data.lifetime_users !== undefined) setLifetimeUsers(data.lifetime_users);
+      })
       .catch(() => {});
 
     connect();
@@ -75,5 +91,7 @@ export function useMarketStream(onTickReceived) {
     connectionStatus,
     marketSession,
     lastTickTime,
+    activeUsers,
+    lifetimeUsers,
   };
 }

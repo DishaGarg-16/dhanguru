@@ -356,3 +356,62 @@ body {
     justify-content: space-between;
   }
 }
+
+/* -------------------------------------------------------------
+   LIVE ACTIVE & LIFETIME INVESTORS FOOTER
+------------------------------------------------------------- */
+.app-footer {
+  margin-top: 36px;
+  padding: 24px 0 16px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.user-stats-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(19, 24, 34, 0.85);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.2s ease;
+}
+
+.user-stats-pill:hover {
+  border-color: rgba(0, 208, 156, 0.35);
+}
+
+.user-stats-dot {
+  font-size: 10px;
+  display: inline-block;
+  animation: pulse-dot 2s infinite ease-in-out;
+}
+
+.user-stats-active {
+  color: #FFF;
+  font-weight: 700;
+}
+
+.user-stats-divider {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.user-stats-lifetime {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .user-stats-pill {
+    font-size: 12px;
+    padding: 6px 14px;
+    gap: 8px;
+  }
+}
+
